@@ -1,1 +1,2407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JusNat Pro — Gestion de vente de jus naturels</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1D9E75;--green-light:#EAF3DE;--green-dark:#0F6E56;
+  --red:#E24B4A;--red-light:#FCEBEB;
+  --amber:#EF9F27;--amber-light:#FAEEDA;
+  --purple:#534AB7;--blue:#378ADD;
+  --bg:#F5F4F0;--bg2:#FFFFFF;--bg3:#EFEFEB;
+  --text:#1a1a18;--text2:#6b6b66;--text3:#9a9a94;
+  --border:#E2E0D8;--border2:#D0CEC6;
+  --radius:10px;--radius-lg:14px;--radius-xl:20px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.06);
+  font-family:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow:hidden}
+
+/* ===== SIDEBAR ===== */
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;flex-shrink:0}
+.logo{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.logo-icon{width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.logo-icon svg{width:20px;height:20px}
+.logo-title{font-size:15px;font-weight:600;color:var(--text)}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace}
+.nav{padding:12px 10px;flex:1;overflow-y:auto}
+.nav-section-label{font-size:10px;color:var(--text3);padding:10px 8px 5px;letter-spacing:.08em;text-transform:uppercase;font-weight:500}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);margin-bottom:2px;transition:all .15s;user-select:none}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--green-light);color:var(--green-dark);font-weight:500}
+.nav-item.active .nav-icon{color:var(--green)}
+.nav-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:20px}
+.sidebar-footer{padding:14px 10px;border-top:1px solid var(--border)}
+.user-chip{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius)}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.user-name{font-size:12px;font-weight:500;color:var(--text)}
+.user-role{font-size:10px;color:var(--text3)}
+
+/* ===== MAIN ===== */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.page-title{font-size:16px;font-weight:600;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.date-badge{font-size:12px;color:var(--text2);background:var(--bg3);padding:4px 10px;border-radius:20px;border:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:hover{background:var(--green-dark)}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:var(--red-light);color:var(--red);border:1px solid #F7C1C1}
+.btn-sm{padding:5px 10px;font-size:12px}
+.content{flex:1;overflow-y:auto;padding:24px;background:var(--bg);-webkit-overflow-scrolling:touch}
+.screen{display:none}
+.screen.active{display:block}
+
+/* ===== CARDS ===== */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)}
+.card-title{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:14px}
+
+/* ===== METRICS ===== */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500}
+.metric-value{font-size:22px;font-weight:600;color:var(--text);line-height:1}
+.metric-change{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:3px}
+.up{color:var(--green);font-weight:500}
+.down{color:var(--red);font-weight:500}
+.metric-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;float:right;margin-top:-4px}
+
+/* ===== CHARTS ROW ===== */
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ===== TABLE ===== */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{color:var(--text3);font-weight:500;font-size:11px;text-align:left;padding:0 0 10px;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.data-table td{padding:10px 0;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.data-table td:last-child{text-align:right}
+.data-table tr:last-child td{border:none}
+.data-table tbody tr:hover{background:var(--bg3);margin:0 -20px}
+
+/* ===== BADGES ===== */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500}
+.badge-green{background:var(--green-light);color:var(--green-dark)}
+.badge-red{background:var(--red-light);color:var(--red)}
+.badge-amber{background:var(--amber-light);color:#633806}
+.badge-gray{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+
+/* ===== STOCK BARS ===== */
+.stock-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.stock-item:last-child{border:none}
+.stock-name{font-size:13px;color:var(--text);min-width:130px}
+.stock-bar-track{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.stock-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.stock-qty{font-size:12px;color:var(--text2);min-width:60px;text-align:right;font-family:'DM Mono',monospace}
+
+/* ===== SALE SCREEN ===== */
+.jus-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px;max-width:560px}
+.jus-card{background:var(--bg2);border:2px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .15s;user-select:none}
+.jus-card:hover{border-color:var(--green);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.jus-card.selected{border-color:var(--green);background:var(--green-light)}
+.jus-thumb{width:40px;height:40px;border-radius:10px;margin-bottom:10px}
+.jus-card-name{font-size:14px;font-weight:600;color:var(--text)}
+.jus-card-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.jus-card-price{font-size:14px;font-weight:600;color:var(--green);margin-top:8px}
+.qty-control{display:flex;align-items:center;gap:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;max-width:560px;margin-bottom:14px}
+.qty-label{font-size:14px;color:var(--text2);flex:1}
+.qty-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text);transition:.1s;user-select:none}
+.qty-btn:hover{background:var(--border)}
+.qty-num{font-size:20px;font-weight:600;min-width:28px;text-align:center;font-family:'DM Mono',monospace}
+.sale-summary{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;max-width:560px;margin-bottom:14px}
+.sale-total-amount{font-size:26px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace}
+.btn-confirm{width:100%;max-width:560px;padding:14px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-lg);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.15s}
+.btn-confirm:hover{background:var(--green-dark)}
+.success-toast{background:var(--green-light);border:1px solid #C0DD97;border-radius:var(--radius-lg);padding:14px 18px;font-size:13px;color:var(--green-dark);font-weight:500;max-width:560px;margin-top:12px;display:none;align-items:center;gap:8px}
+
+/* ===== PRODUCTS SCREEN ===== */
+.products-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.product-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow)}
+.prod-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.prod-thumb{width:42px;height:42px;border-radius:12px;flex-shrink:0}
+.prod-name{font-size:14px;font-weight:600;color:var(--text)}
+.prod-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.prod-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.prod-stat{text-align:center;background:var(--bg3);border-radius:var(--radius);padding:10px 6px}
+.prod-stat-val{font-size:14px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace}
+.prod-stat-lbl{font-size:10px;color:var(--text3);margin-top:2px}
+.prod-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border-radius:var(--radius-xl);padding:28px;width:480px;max-width:95vw;box-shadow:var(--shadow-md);animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:20px;color:var(--text)}
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;display:block}
+.form-input{width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg2);transition:.15s}
+.form-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* ===== HISTORIQUE ===== */
+.period-tabs{display:flex;gap:6px;margin-bottom:18px}
+.period-tab{padding:7px 16px;border-radius:20px;font-size:13px;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text2);transition:.15s;font-family:'DM Sans',sans-serif;font-weight:500}
+.period-tab.active,.period-tab:hover{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* ===== SECTION HEADER ===== */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:15px;font-weight:600;color:var(--text)}
+
+/* ===== PRODUCTION ===== */
+.prod-form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;box-shadow:var(--shadow);margin-bottom:20px}
+.prod-form-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.prod-form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.prod-form-field{display:flex;flex-direction:column;gap:6px}
+.prod-form-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.prod-form-input{padding:10px 14px;border:1px solid var(--border2);border-radius:var(--radius);font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg2);transition:.15s;width:100%}
+.prod-form-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+.prod-form-select{padding:10px 14px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg2);width:100%;cursor:pointer}
+.prod-form-select:focus{outline:none;border-color:var(--green)}
+.prod-result-box{background:var(--bg3);border-radius:var(--radius-lg);padding:18px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;border:1px solid var(--border);overflow:hidden}
+.prod-result-box.profit{background:var(--green-light);border-color:#C0DD97}
+.prod-result-box.loss{background:var(--red-light);border-color:#F7C1C1}
+.prod-result-item{padding:14px 16px;background:var(--bg2);text-align:center}
+.prod-result-item:first-child{border-radius:var(--radius) 0 0 var(--radius)}
+.prod-result-item:last-child{border-radius:0 var(--radius) var(--radius) 0}
+.prod-result-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.prod-result-value{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)}
+.prod-result-value.green{color:var(--green)}
+.prod-result-value.red{color:var(--red)}
+.prod-result-value.amber{color:var(--amber)}
+.prod-result-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.prod-history-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow)}
+.prod-summary-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.prod-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.prod-tag-profit{background:var(--green-light);color:var(--green-dark)}
+.prod-tag-loss{background:var(--red-light);color:var(--red)}
+.prod-tag-neutral{background:var(--amber-light);color:#633806}
+
+/* ===== PAIEMENTS DIFFÉRÉS ===== */
+.pay-mode-row{display:flex;gap:10px;margin-bottom:16px;max-width:560px}
+.pay-mode-btn{flex:1;padding:12px 10px;border-radius:var(--radius-lg);border:2px solid var(--border);background:var(--bg2);cursor:pointer;text-align:center;transition:all .15s;user-select:none}
+.pay-mode-btn:hover{border-color:var(--green)}
+.pay-mode-btn.selected-cash{border-color:var(--green);background:var(--green-light)}
+.pay-mode-btn.selected-defer{border-color:var(--amber);background:var(--amber-light)}
+.pay-mode-icon{font-size:22px;margin-bottom:4px}
+.pay-mode-label{font-size:12px;font-weight:600;color:var(--text)}
+.pay-mode-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.defer-fields{display:none;max-width:560px;margin-bottom:14px;background:var(--amber-light);border:1px solid #F0D49A;border-radius:var(--radius-lg);padding:14px 16px}
+.defer-fields.show{display:block}
+.defer-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.credit-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--radius);margin-bottom:6px;cursor:pointer;transition:.15s}
+.credit-row:hover{background:var(--bg3)}
+.credit-row.paid{background:var(--green-light)}
+.credit-row.overdue{background:var(--red-light)}
+.credit-badge-pending{background:var(--amber-light);color:#633806;border:1px solid #F0D49A;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.credit-badge-paid{background:var(--green-light);color:var(--green-dark);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.credit-badge-overdue{background:var(--red-light);color:var(--red);border:1px solid #F7C1C1;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.paiement-tabs{display:flex;gap:6px;margin-bottom:18px}
+.paiement-tab{padding:7px 16px;border-radius:20px;font-size:13px;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text2);transition:.15s;font-family:'DM Sans',sans-serif;font-weight:500}
+.paiement-tab.active{background:var(--amber);color:#fff;border-color:var(--amber)}
+/* ===== AUTHENTIFICATION ===== */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:36px 40px;width:400px;max-width:95vw;box-shadow:var(--shadow-md)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.login-logo-icon{width:44px;height:44px;background:var(--green);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.login-logo-name{font-size:18px;font-weight:700;color:var(--text);line-height:1}
+.login-logo-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.login-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.login-subtitle{font-size:13px;color:var(--text2);margin-bottom:22px}
+.login-user-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.login-user-card{border:2px solid var(--border);border-radius:var(--radius-lg);padding:16px 12px;cursor:pointer;transition:all .15s;text-align:center;user-select:none}
+.login-user-card:hover{border-color:var(--green);background:var(--green-light)}
+.login-user-card.selected{border-color:var(--green);background:var(--green-light)}
+.login-avatar{width:44px;height:44px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff}
+.login-card-name{font-size:13px;font-weight:600;color:var(--text)}
+.login-card-role{font-size:11px;color:var(--text3);margin-top:3px}
+.login-card-perms{font-size:10px;color:var(--text3);margin-top:6px;line-height:1.5}
+.login-error{background:var(--red-light);border:1px solid #F7C1C1;border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:14px;display:none}
+.btn-login{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-lg);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.15s;margin-top:4px}
+.btn-login:hover{background:var(--green-dark)}
+.role-badge-admin{background:var(--purple);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
+.role-badge-vendeur{background:var(--amber-light);color:#633806;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid #F0D49A}
+.nav-item.locked{opacity:.4;cursor:not-allowed!important}
+.nav-item.locked:hover{background:transparent!important;color:var(--text2)!important}
+.admin-guard-msg{display:none;position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;z-index:500;box-shadow:var(--shadow-md);align-items:center;gap:8px}
+.admin-guard-msg.show{display:flex}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ===== RESPONSIVE MOBILE ===== */
+@media(max-width:768px){
+
+  /* Layout général — scroll libéré */
+  body{
+    overflow:auto;
+    overflow-x:hidden;
+    height:100vh;
+    height:100dvh;
+    flex-direction:column;
+  }
+
+  /* Sidebar cachée sur mobile — remplacée par bottom nav */
+  .sidebar{ display:none !important; }
+
+  /* Main : colonne flexible, hauteur pleine */
+  .main{
+    height:100vh;
+    height:100dvh;
+    overflow:hidden; /* le scroll est géré par .content */
+    flex-shrink:0;
+    width:100%;
+  }
+
+  /* Contenu scrollable avec espace pour la barre du bas */
+  .content{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    padding:14px 14px 80px 14px; /* 80px = hauteur bottom nav */
+    height:0; /* trick flex pour que overflow-y fonctionne */
+  }
+
+  /* Topbar mobile */
+  .topbar{ padding:0 14px; height:52px; }
+  .page-title{ font-size:15px; }
+  .date-badge{ display:none; }
+  #topbar-role-badge{ display:none; }
+  .topbar-right{ gap:6px; }
+  .btn{ padding:6px 12px; font-size:12px; }
+
+  /* ===== BOTTOM NAVIGATION ===== */
+  #bottom-nav{
+    display:flex;
+    position:fixed;
+    bottom:0; left:0; right:0;
+    height:60px;
+    background:var(--bg2);
+    border-top:1px solid var(--border);
+    z-index:200;
+    box-shadow:0 -2px 12px rgba(0,0,0,.08);
+    /* Sécurité iPhone avec notch */
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  .bnav-item{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; cursor:pointer; padding:6px 2px; position:relative;
+    color:var(--text3); transition:color .15s; user-select:none;
+    border:none; background:none; font-family:'DM Sans',sans-serif;
+  }
+  .bnav-item.active{ color:var(--green); }
+  .bnav-item svg{ width:20px; height:20px; }
+  .bnav-label{ font-size:9px; font-weight:600; letter-spacing:.02em; }
+  .bnav-badge{
+    position:absolute; top:4px; right:calc(50% - 18px);
+    background:var(--red); color:#fff; font-size:9px; font-weight:700;
+    padding:1px 4px; border-radius:10px; min-width:14px; text-align:center;
+  }
+  .bnav-badge.amber{ background:var(--amber); }
+
+  /* ===== MENU DRAWER ===== */
+  #mobile-drawer{
+    display:none; position:fixed; inset:0; z-index:300;
+  }
+  #mobile-drawer.open{ display:block; }
+  #drawer-overlay{
+    position:absolute; inset:0; background:rgba(0,0,0,.4);
+  }
+  #drawer-panel{
+    position:absolute; bottom:0; left:0; right:0;
+    background:var(--bg2); border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+    padding:16px 0 32px; max-height:75vh; overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  #drawer-handle{
+    width:36px; height:4px; background:var(--border2); border-radius:2px;
+    margin:0 auto 16px;
+  }
+  .drawer-title{ font-size:13px; font-weight:600; color:var(--text3); padding:0 20px 10px; text-transform:uppercase; letter-spacing:.06em; }
+  .drawer-item{
+    display:flex; align-items:center; gap:14px; padding:14px 20px;
+    font-size:14px; font-weight:500; color:var(--text); cursor:pointer;
+    border-bottom:1px solid var(--border); transition:background .15s;
+  }
+  .drawer-item:last-child{ border:none; }
+  .drawer-item:active{ background:var(--bg3); }
+  .drawer-item svg{ color:var(--text3); flex-shrink:0; }
+  .drawer-item.locked{ opacity:.4; }
+  .drawer-item .drawer-badge{
+    margin-left:auto; background:var(--red); color:#fff;
+    font-size:10px; font-weight:700; padding:2px 6px; border-radius:20px;
+  }
+  .drawer-item .drawer-badge.amber{ background:var(--amber); }
+
+  /* ===== METRICS ===== */
+  .metrics-grid{ grid-template-columns:repeat(2,1fr) !important; gap:10px; margin-bottom:14px; }
+  .metric{ padding:12px 14px; }
+  .metric-value{ font-size:18px; }
+  .metric-icon{ width:28px; height:28px; }
+
+  /* ===== CHARTS ===== */
+  .charts-row{ grid-template-columns:1fr !important; gap:10px; margin-bottom:12px; }
+  .bottom-row{ grid-template-columns:1fr !important; gap:10px; }
+
+  /* ===== TABLES scroll horizontal ===== */
+  .card{ padding:14px; }
+  .card-overflow{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .data-table{ min-width:480px; }
+  .prod-history-card{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #prod-history-table{ min-width:680px; }
+  #stock-table{ min-width:580px; }
+
+  /* ===== VENTE ===== */
+  .jus-grid{ grid-template-columns:repeat(2,1fr) !important; gap:10px; max-width:100% !important; }
+  .jus-card{ padding:12px; }
+  .jus-thumb{ width:36px; height:36px; }
+  .jus-card-name{ font-size:13px; }
+  .qty-control{ padding:12px 14px; }
+  .sale-summary{ padding:12px 14px; max-width:100% !important; }
+  .sale-total-amount{ font-size:22px; }
+  .btn-confirm{ font-size:14px; padding:14px; max-width:100% !important; }
+  .pay-mode-row{ gap:8px; max-width:100% !important; }
+  .pay-mode-btn{ padding:10px 8px; }
+  .defer-fields{ max-width:100% !important; }
+  .defer-fields-grid{ grid-template-columns:1fr !important; }
+
+  /* ===== PRODUITS ===== */
+  .products-grid{ grid-template-columns:1fr !important; }
+
+  /* ===== PRODUCTION ===== */
+  .prod-form-grid{ grid-template-columns:1fr !important; }
+  .prod-form-card{ padding:14px; }
+  .prod-result-box{ grid-template-columns:1fr !important; gap:1px; }
+  .prod-result-item:first-child{ border-radius:var(--radius) var(--radius) 0 0; }
+  .prod-result-item:last-child{ border-radius:0 0 var(--radius) var(--radius); }
+  .prod-summary-metrics{ grid-template-columns:repeat(2,1fr) !important; }
+  #prod-indicators{ flex-wrap:wrap; }
+
+  /* ===== MODAL (s'ouvre depuis le bas) ===== */
+  .modal-overlay{ align-items:flex-end !important; padding:0 !important; }
+  .modal{
+    width:100% !important; max-width:100% !important;
+    border-radius:var(--radius-xl) var(--radius-xl) 0 0 !important;
+    padding:20px 18px 40px !important;
+    max-height:92vh; overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .form-row{ grid-template-columns:1fr !important; }
+
+  /* ===== SECTION HEADER ===== */
+  .section-header{ flex-wrap:wrap; gap:8px; }
+  .section-title{ font-size:14px; }
+
+  /* ===== CREDITS ===== */
+  .paiement-tabs{ flex-wrap:wrap; gap:6px; }
+  .paiement-tab{ font-size:12px; padding:6px 12px; }
+
+  /* ===== GUARD TOAST ===== */
+  .admin-guard-msg{ bottom:70px; left:14px; right:14px; text-align:center; justify-content:center; font-size:12px; }
+
+  /* ===== LOGIN ===== */
+  .login-box{
+    padding:32px 20px 40px;
+    border-radius:0; width:100%; max-width:100%;
+    height:100vh; height:100dvh;
+    display:flex; flex-direction:column; justify-content:center;
+    box-shadow:none; border:none; overflow-y:auto;
+  }
+}
+
+/* Desktop : cacher bottom nav et drawer */
+@media(min-width:769px){
+  #bottom-nav{ display:none !important; }
+  #mobile-drawer{ display:none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== ÉCRAN DE CONNEXION ===== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
+          <ellipse cx="10" cy="10" rx="7" ry="7" fill="white" fill-opacity=".9"/>
+          <path d="M10 4C10 4 7 7 7 10.5C7 12.5 8.3 14 10 14C11.7 14 13 12.5 13 10.5C13 7 10 4 10 4Z" fill="#1D9E75"/>
+        </svg>
+      </div>
+      <div>
+        <div class="login-logo-name">JusNat Pro</div>
+        <div class="login-logo-sub">Gestion artisanale de jus naturels</div>
+      </div>
+    </div>
+
+    <div class="login-title">Bienvenue 👋</div>
+    <div class="login-subtitle">Choisissez votre profil puis connectez-vous.</div>
+
+    <div class="login-user-cards">
+      <div class="login-user-card selected" id="card-admin" onclick="selectLoginUser('admin')">
+        <div class="login-avatar" style="background:var(--purple)">A</div>
+        <div class="login-card-name">Administrateur</div>
+        <div class="login-card-role">Accès complet</div>
+        <div class="login-card-perms">Produits · Stocks · Production<br>Rapports · Paramètres</div>
+      </div>
+      <div class="login-user-card" id="card-vendeur" onclick="selectLoginUser('vendeur')">
+        <div class="login-avatar" style="background:var(--green)">V</div>
+        <div class="login-card-name">Vendeur</div>
+        <div class="login-card-role">Accès restreint</div>
+        <div class="login-card-perms">Ventes · Dashboard<br>Paiements · Historique</div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="form-label">Adresse email</label>
+      <input class="form-input" id="login-email" type="email" placeholder="ex: admin@jusnat.ci" value="admin@jusnat.ci" onkeydown="if(event.key==='Enter')document.getElementById('login-pwd').focus()"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input class="form-input" id="login-pwd" type="password" placeholder="Entrez votre mot de passe" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+
+    <div class="login-error" id="login-error"></div>
+
+    <button class="btn-login" onclick="doLogin()">
+      Se connecter →
+    </button>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+  <div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite"></div>
+  <span style="font-size:13px;color:var(--text2)">Chargement...</span>
+</div>
+<!-- Erreur globale -->
+<div id="global-error" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:10px 18px;border-radius:var(--radius-lg);font-size:13px;z-index:600;white-space:nowrap;max-width:90vw"></div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<!-- Toast accès refusé -->
+<div class="admin-guard-msg" id="guard-toast">
+  🔒 <span>Accès réservé à l'administrateur</span>
+</div>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="10" cy="10" rx="7" ry="7" fill="white" fill-opacity=".9"/>
+        <path d="M10 4C10 4 7 7 7 10.5C7 12.5 8.3 14 10 14C11.7 14 13 12.5 13 10.5C13 7 10 4 10 4Z" fill="#1D9E75"/>
+      </svg>
+    </div>
+    <div class="logo-title">JusNat Pro</div>
+    <div class="logo-sub">v1.0 · artisanal</div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section-label">Principal</div>
+    <div class="nav-item active" data-screen="dashboard" onclick="showScreen('dashboard',this)">
+      <div class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+      <span class="nav-label-text">Tableau de bord</span>
+    </div>
+    <div class="nav-item" data-screen="ventes" onclick="showScreen('ventes',this)">
+      <div class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+      <span class="nav-label-text">Enregistrer vente</span>
+    </div>
+    <div class="nav-section-label">Gestion</div>
+    <div class="nav-item" data-screen="produits" onclick="showScreen('produits',this)">
+      <div class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+      <span class="nav-label-text">Produits</span>
+      <span style="font-size:9px;color:var(--text3);margin-left:auto">🔒</span>
+    </div>
+    <div class="nav-item" data-screen="stock" onclick="showScreen('stock',this)" id="nav-stock">
+      <div class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+      <span class="nav-label-text">Stocks</span>
+      <span class="nav-badge" id="stock-badge">3</span>
+    </div>
+    <div class="nav-item" data-screen="production" onclick="showScreen('production',this)">
+      <div class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M2 20h20M6 20V10l6-6 6 6v10M10 20v-5h4v5"/><circle cx="12" cy="10" r="1" fill="currentColor"/></svg></div>
+      <span class="nav-label-text">Production</span>
+      <span style="font-size:9px;color:var(--text3);margin-left:auto">🔒</span>
+    </div>
+    <div class="nav-item" data-screen="paiements" onclick="showScreen('paiements',this)" id="nav-paiements">
+      <div class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg></div>
+      <span class="nav-label-text">Paiements différés</span>
+      <span class="nav-badge" id="credit-badge" style="background:var(--amber)">0</span>
+    </div>
+    <div class="nav-section-label">Analyse</div>
+    <div class="nav-item" data-screen="historique" onclick="showScreen('historique',this)">
+      <div class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <span class="nav-label-text">Historique</span>
+    </div>
+    <div class="nav-item" data-screen="rapports" onclick="showScreen('rapports',this)">
+      <div class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+      <span class="nav-label-text">Rapports</span>
+      <span style="font-size:9px;color:var(--text3);margin-left:auto">🔒</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-avatar" id="sidebar-user-avatar" style="background:var(--purple)">A</div>
+      <div style="flex:1;min-width:0">
+        <div class="user-name" id="sidebar-user-name">Administrateur</div>
+        <div class="user-role" id="sidebar-user-role">Accès complet</div>
+      </div>
+      <button onclick="logout()" title="Se déconnecter" style="background:none;border:none;cursor:pointer;padding:4px;border-radius:6px;color:var(--text3);display:flex;align-items:center" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Tableau de bord</div>
+    <div class="topbar-right">
+      <span class="date-badge" id="current-date"></span>
+      <span id="topbar-role-badge" class="role-badge-admin">🔑 Admin</span>
+      <button class="btn btn-primary" onclick="showScreen('ventes',null)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Vente rapide
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ========== DASHBOARD ========== -->
+    <div class="screen active" id="screen-dashboard">
+      <div class="metrics-grid">
+        <div class="metric">
+          <div class="metric-label">Chiffre d'affaires (mois)</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="metric-value" id="m-ca">487 500 F</div>
+              <div class="metric-change up">↑ +12% vs mois dernier</div>
+            </div>
+            <div class="metric-icon" style="background:#EAF3DE"><svg width="18" height="18" fill="none" stroke="#1D9E75" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Bénéfice net</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="metric-value" style="color:var(--green)" id="m-ben">193 200 F</div>
+              <div class="metric-change up">↑ Marge 39.6%</div>
+            </div>
+            <div class="metric-icon" style="background:#EAF3DE"><svg width="18" height="18" fill="none" stroke="#1D9E75" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Ventes aujourd'hui</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="metric-value" id="m-ventes">47</div>
+              <div class="metric-change up">↑ +8 bouteilles vs hier</div>
+            </div>
+            <div class="metric-icon" style="background:#EAF3DE"><svg width="18" height="18" fill="none" stroke="#1D9E75" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Alertes stock</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="metric-value" style="color:var(--red)" id="m-alertes">3</div>
+              <div class="metric-change down">↓ Réapprovisionnement requis</div>
+            </div>
+            <div class="metric-icon" style="background:var(--red-light)"><svg width="18" height="18" fill="none" stroke="var(--red)" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="card">
+          <div class="card-title">Ventes des 7 derniers jours</div>
+          <div style="position:relative;height:200px"><canvas id="salesChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Répartition par produit</div>
+          <div style="position:relative;height:160px"><canvas id="pieChart"></canvas></div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#E24B4A;display:inline-block"></span>Bissap</span><span style="font-weight:600;font-family:'DM Mono',monospace">35%</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#EF9F27;display:inline-block"></span>Gingembre</span><span style="font-weight:600;font-family:'DM Mono',monospace">25%</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#1D9E75;display:inline-block"></span>Ananas</span><span style="font-weight:600;font-family:'DM Mono',monospace">22%</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:3px;background:#5DCAA5;display:inline-block"></span>Baobab</span><span style="font-weight:600;font-family:'DM Mono',monospace">18%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="card">
+          <div class="card-title">Meilleures ventes du jour</div>
+          <table class="data-table">
+            <thead><tr><th>Produit</th><th>Qté</th><th>CA</th><th>Bénéfice</th></tr></thead>
+            <tbody>
+              <tr><td><span style="display:inline-flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:#E24B4A;display:inline-block"></span>Bissap</span></td><td>18</td><td>36 000 F</td><td><span class="badge badge-green">+14 400 F</span></td></tr>
+              <tr><td><span style="display:inline-flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:#EF9F27;display:inline-block"></span>Gingembre</span></td><td>12</td><td>24 000 F</td><td><span class="badge badge-green">+9 600 F</span></td></tr>
+              <tr><td><span style="display:inline-flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:#1D9E75;display:inline-block"></span>Ananas</span></td><td>10</td><td>20 000 F</td><td><span class="badge badge-green">+7 200 F</span></td></tr>
+              <tr><td><span style="display:inline-flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:#5DCAA5;display:inline-block"></span>Baobab</span></td><td>7</td><td>14 000 F</td><td><span class="badge badge-green">+4 900 F</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="card-title" style="margin:0">État des stocks</div>
+            <span class="badge badge-red">3 alertes</span>
+          </div>
+          <div class="stock-item">
+            <span class="stock-name">Fleurs de bissap</span>
+            <div class="stock-bar-track"><div class="stock-bar-fill" style="width:20%;background:var(--red)"></div></div>
+            <span class="stock-qty" style="color:var(--red)">0.8 kg ⚠</span>
+          </div>
+          <div class="stock-item">
+            <span class="stock-name">Sucre blanc</span>
+            <div class="stock-bar-track"><div class="stock-bar-fill" style="width:30%;background:var(--amber)"></div></div>
+            <span class="stock-qty" style="color:var(--amber)">3 kg ⚠</span>
+          </div>
+          <div class="stock-item">
+            <span class="stock-name">Gingembre frais</span>
+            <div class="stock-bar-track"><div class="stock-bar-fill" style="width:55%;background:var(--green)"></div></div>
+            <span class="stock-qty">5.5 kg</span>
+          </div>
+          <div class="stock-item">
+            <span class="stock-name">Ananas</span>
+            <div class="stock-bar-track"><div class="stock-bar-fill" style="width:70%;background:var(--green)"></div></div>
+            <span class="stock-qty">14 pcs</span>
+          </div>
+          <div class="stock-item">
+            <span class="stock-name">Bouteilles 75cl</span>
+            <div class="stock-bar-track"><div class="stock-bar-fill" style="width:15%;background:var(--red)"></div></div>
+            <span class="stock-qty" style="color:var(--red)">23 pcs ⚠</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== VENTES ========== -->
+    <div class="screen" id="screen-ventes">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Sélectionnez le jus, la quantité et le mode de paiement.</p>
+      <div class="jus-grid">
+        <div class="jus-card selected" onclick="selectJus(this,'Bissap',2000,'#E24B4A')" id="jus-bissap">
+          <div class="jus-thumb" style="background:linear-gradient(135deg,#E24B4A,#993556)"></div>
+          <div class="jus-card-name">Bissap</div>
+          <div class="jus-card-desc">Fleurs d'hibiscus · sucre · eau</div>
+          <div class="jus-card-price">2 000 F CFA</div>
+        </div>
+        <div class="jus-card" onclick="selectJus(this,'Gingembre',2000,'#EF9F27')" id="jus-gingembre">
+          <div class="jus-thumb" style="background:linear-gradient(135deg,#EF9F27,#BA7517)"></div>
+          <div class="jus-card-name">Gingembre</div>
+          <div class="jus-card-desc">Gingembre frais · citron · sucre</div>
+          <div class="jus-card-price">2 000 F CFA</div>
+        </div>
+        <div class="jus-card" onclick="selectJus(this,'Ananas',2000,'#1D9E75')" id="jus-ananas">
+          <div class="jus-thumb" style="background:linear-gradient(135deg,#97C459,#1D9E75)"></div>
+          <div class="jus-card-name">Ananas</div>
+          <div class="jus-card-desc">Ananas frais · sucre · eau</div>
+          <div class="jus-card-price">2 000 F CFA</div>
+        </div>
+        <div class="jus-card" onclick="selectJus(this,'Baobab',2000,'#5DCAA5')" id="jus-baobab">
+          <div class="jus-thumb" style="background:linear-gradient(135deg,#5DCAA5,#0F6E56)"></div>
+          <div class="jus-card-name">Baobab</div>
+          <div class="jus-card-desc">Poudre de baobab · lait · sucre</div>
+          <div class="jus-card-price">2 000 F CFA</div>
+        </div>
+      </div>
+
+      <div class="qty-control">
+        <span class="qty-label">Quantité vendue</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span class="qty-num" id="qty-display">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+
+      <!-- MODE DE PAIEMENT -->
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;max-width:560px">Mode de paiement</div>
+      <div class="pay-mode-row">
+        <div class="pay-mode-btn selected-cash" id="pm-cash" onclick="selectPayMode('cash')">
+          <div class="pay-mode-icon">💵</div>
+          <div class="pay-mode-label">Paiement immédiat</div>
+          <div class="pay-mode-sub">Réglé sur place</div>
+        </div>
+        <div class="pay-mode-btn" id="pm-defer" onclick="selectPayMode('defer')">
+          <div class="pay-mode-icon">📅</div>
+          <div class="pay-mode-label">Paiement différé</div>
+          <div class="pay-mode-sub">À régler plus tard</div>
+        </div>
+      </div>
+
+      <!-- CHAMPS PAIEMENT DIFFÉRÉ -->
+      <div class="defer-fields" id="defer-fields">
+        <div style="font-size:13px;font-weight:600;color:#633806;margin-bottom:4px">⏳ Informations du crédit</div>
+        <div style="font-size:12px;color:#7a5c1e;margin-bottom:10px">Ces informations seront suivies dans le module Paiements différés.</div>
+        <div class="defer-fields-grid">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Nom du client</label>
+            <input class="form-input" id="v-client" placeholder="ex: Mamadou Koné" style="background:#fff"/>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Date d'échéance prévue</label>
+            <input class="form-input" id="v-echeance" type="date" style="background:#fff;font-family:'DM Sans',sans-serif"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:10px;margin-bottom:0">
+          <label class="form-label">Note (facultatif)</label>
+          <input class="form-input" id="v-note" placeholder="ex: Paiera vendredi au marché" style="background:#fff"/>
+        </div>
+      </div>
+
+      <div class="sale-summary">
+        <div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:4px" id="sale-mode-label">Total à encaisser</div>
+          <div style="font-size:12px;color:var(--text2)" id="sale-detail">1 × 2 000 F</div>
+        </div>
+        <div class="sale-total-amount" id="sale-total">2 000 F</div>
+      </div>
+
+      <button class="btn-confirm" id="btn-confirm-sale" onclick="confirmSale()">✓ Confirmer la vente — Paiement immédiat</button>
+      <div class="success-toast" id="sale-toast">
+        <svg width="16" height="16" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="sale-toast-msg">Vente enregistrée avec succès !</span>
+      </div>
+
+      <div class="card" style="margin-top:24px;max-width:560px">
+        <div class="card-title">Ventes enregistrées aujourd'hui</div>
+        <table class="data-table" id="sales-log">
+          <thead><tr><th>Heure</th><th>Produit</th><th>Qté</th><th>Montant</th><th>Paiement</th><th>Bénéfice</th></tr></thead>
+          <tbody id="sales-log-body">
+            <tr><td style="color:var(--text3)">14:32</td><td>Bissap</td><td>3</td><td>6 000 F</td><td><span class="badge badge-green">Payé</span></td><td><span class="badge badge-green">+2 400 F</span></td></tr>
+            <tr><td style="color:var(--text3)">11:15</td><td>Gingembre</td><td>5</td><td>10 000 F</td><td><span class="badge badge-green">Payé</span></td><td><span class="badge badge-green">+4 500 F</span></td></tr>
+            <tr><td style="color:var(--text3)">09:50</td><td>Ananas</td><td>4</td><td>8 000 F</td><td><span class="badge badge-amber">Crédit</span></td><td><span class="badge badge-green">+2 880 F</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== PRODUITS ========== -->
+    <div class="screen" id="screen-produits">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Gestion des produits</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">4 jus actifs</div>
+        </div>
+        <button class="btn btn-primary" data-admin-only onclick="openProductModal()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter un jus
+        </button>
+      </div>
+      <div class="products-grid" id="products-grid">
+        <!-- Rempli par JS -->
+      </div>
+    </div>
+
+    <!-- ========== STOCK ========== -->
+    <div class="screen" id="screen-stock">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Gestion des stocks</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">8 matières premières</div>
+        </div>
+        <button class="btn btn-primary" data-admin-only onclick="openStockModal()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Approvisionner
+        </button>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Alertes actives</div>
+        <div id="alerts-container"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Inventaire complet</div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <table class="data-table" id="stock-table">
+            <thead><tr><th>Matière première</th><th>Stock</th><th>Unité</th><th>Seuil alerte</th><th>Coût unitaire</th><th>Statut</th><th>Action</th></tr></thead>
+            <tbody id="stock-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAIEMENTS DIFFÉRÉS ========== -->
+    <div class="screen" id="screen-paiements">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Paiements différés (crédits clients)</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">Suivi des ventes non encore réglées</div>
+        </div>
+        <button class="btn btn-secondary" onclick="showScreen('ventes', document.querySelectorAll('.nav-item')[1])">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          Enregistrer une vente
+        </button>
+      </div>
+
+      <!-- KPIs crédits -->
+      <div class="metrics-grid">
+        <div class="metric">
+          <div class="metric-label">Total en attente</div>
+          <div class="metric-value" style="color:var(--amber)" id="ck-total">0 F</div>
+          <div class="metric-change down">À encaisser</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Créances en cours</div>
+          <div class="metric-value" id="ck-count">0</div>
+          <div class="metric-change" style="color:var(--text3)">Clients débiteurs</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">En retard</div>
+          <div class="metric-value" style="color:var(--red)" id="ck-overdue">0</div>
+          <div class="metric-change down">Échéance dépassée</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Encaissé ce mois</div>
+          <div class="metric-value" style="color:var(--green)" id="ck-paid">0 F</div>
+          <div class="metric-change up">↑ Récupéré</div>
+        </div>
+      </div>
+
+      <!-- Filtres -->
+      <div class="paiement-tabs" id="pay-filter-tabs">
+        <button class="paiement-tab active" onclick="filterCredits(this,'tous')">Tous</button>
+        <button class="paiement-tab" onclick="filterCredits(this,'en_attente')">En attente</button>
+        <button class="paiement-tab" onclick="filterCredits(this,'en_retard')">En retard</button>
+        <button class="paiement-tab" onclick="filterCredits(this,'regle')">Réglés</button>
+      </div>
+
+      <!-- Liste des crédits -->
+      <div class="card" id="credits-list-card">
+        <div class="card-title">Liste des crédits clients</div>
+        <div id="credits-list">
+          <!-- rempli par JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PRODUCTION ========== -->
+    <div class="screen" id="screen-production">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Gestion de la production</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">Enregistrez chaque lot produit et calculez le bénéfice réel</div>
+        </div>
+      </div>
+
+      <!-- Formulaire de saisie -->
+      <div class="prod-form-card">
+        <div class="prod-form-title">
+          <svg width="16" height="16" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Enregistrer un lot de production
+        </div>
+
+        <div class="prod-form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
+          <div class="prod-form-field">
+            <label class="prod-form-label">Produit fabriqué</label>
+            <select class="prod-form-select" id="p-produit" onchange="updateProdCalc()">
+              <option value="Bissap">Bissap</option>
+              <option value="Gingembre">Gingembre</option>
+              <option value="Ananas">Ananas</option>
+              <option value="Baobab">Baobab</option>
+            </select>
+          </div>
+          <div class="prod-form-field">
+            <label class="prod-form-label">Date de production</label>
+            <input class="prod-form-input" type="date" id="p-date" style="font-family:'DM Sans',sans-serif;font-size:13px"/>
+          </div>
+        </div>
+
+        <div class="prod-form-grid">
+          <div class="prod-form-field">
+            <label class="prod-form-label">💰 Coût total des ingrédients (F CFA)</label>
+            <input class="prod-form-input" type="number" id="p-cout" placeholder="ex: 25 000" oninput="updateProdCalc()"/>
+            <span style="font-size:11px;color:var(--text3);margin-top:3px">Estimation du montant dépensé pour les matières premières</span>
+          </div>
+          <div class="prod-form-field">
+            <label class="prod-form-label">🍶 Bouteilles produites</label>
+            <input class="prod-form-input" type="number" id="p-produites" placeholder="ex: 30" oninput="updateProdCalc()"/>
+            <span style="font-size:11px;color:var(--text3);margin-top:3px">Nombre total de bouteilles issues de ce lot</span>
+          </div>
+          <div class="prod-form-field">
+            <label class="prod-form-label">🛒 Bouteilles vendues</label>
+            <input class="prod-form-input" type="number" id="p-vendues" placeholder="ex: 24" oninput="updateProdCalc()"/>
+            <span style="font-size:11px;color:var(--text3);margin-top:3px">Nombre de bouteilles effectivement vendues</span>
+          </div>
+        </div>
+
+        <!-- Résultat calculé en temps réel -->
+        <div style="margin-top:20px;margin-bottom:18px">
+          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Calcul en temps réel</div>
+          <div class="prod-result-box" id="prod-result-box">
+            <div class="prod-result-item">
+              <div class="prod-result-label">Recettes (ventes)</div>
+              <div class="prod-result-value" id="pr-recettes">—</div>
+              <div class="prod-result-sub" id="pr-recettes-sub">Bouteilles vendues × prix</div>
+            </div>
+            <div class="prod-result-item">
+              <div class="prod-result-label">Coût production</div>
+              <div class="prod-result-value amber" id="pr-cout">—</div>
+              <div class="prod-result-sub" id="pr-cout-sub">Ingrédients utilisés</div>
+            </div>
+            <div class="prod-result-item">
+              <div class="prod-result-label">Bénéfice net</div>
+              <div class="prod-result-value" id="pr-benefice">—</div>
+              <div class="prod-result-sub" id="pr-benefice-sub">Recettes − Coût</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Indicateurs complémentaires -->
+        <div id="prod-indicators" style="display:none;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:10px 14px;display:flex;flex-direction:column;gap:3px;min-width:160px">
+            <span style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase">Coût unitaire de revient</span>
+            <span style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text)" id="ind-cout-unit">—</span>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:10px 14px;display:flex;flex-direction:column;gap:3px;min-width:160px">
+            <span style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase">Marge par bouteille</span>
+            <span style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)" id="ind-marge-unit">—</span>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:10px 14px;display:flex;flex-direction:column;gap:3px;min-width:160px">
+            <span style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase">Bouteilles en stock (lot)</span>
+            <span style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--amber)" id="ind-restant">—</span>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:10px 14px;display:flex;flex-direction:column;gap:3px;min-width:160px">
+            <span style="font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase">Taux de vente</span>
+            <span style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--purple)" id="ind-taux">—</span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="saveProd()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            Enregistrer ce lot
+          </button>
+          <button class="btn btn-secondary" onclick="resetProdForm()">Réinitialiser</button>
+        </div>
+        <div id="prod-toast" style="display:none;margin-top:12px;background:var(--green-light);border:1px solid #C0DD97;border-radius:var(--radius-lg);padding:12px 16px;font-size:13px;color:var(--green-dark);font-weight:500;align-items:center;gap:8px">
+          <svg width="16" height="16" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Lot de production enregistré avec succès !
+        </div>
+      </div>
+
+      <!-- KPIs globaux de production -->
+      <div class="prod-summary-metrics" id="prod-kpi-grid">
+        <div class="metric">
+          <div class="metric-label">Total lots enregistrés</div>
+          <div class="metric-value" id="kpi-lots">3</div>
+          <div class="metric-change up">↑ Ce mois</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Bouteilles produites</div>
+          <div class="metric-value" id="kpi-prod">104</div>
+          <div class="metric-change" style="color:var(--text3)">Total cumulé</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Bouteilles vendues</div>
+          <div class="metric-value" id="kpi-vend">86</div>
+          <div class="metric-change up">Taux 82.7%</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Bénéfice total production</div>
+          <div class="metric-value" style="color:var(--green)" id="kpi-ben">78 400 F</div>
+          <div class="metric-change up">↑ Rentable</div>
+        </div>
+      </div>
+
+      <!-- Historique des lots -->
+      <div class="prod-history-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="card-title" style="margin:0">Historique des lots de production</div>
+          <button class="btn btn-secondary btn-sm" onclick="exportProdCSV()">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exporter CSV
+          </button>
+        </div>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+          <table class="data-table" id="prod-history-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Produit</th><th>Coût ingréd.</th>
+                <th>Bts produites</th><th>Bts vendues</th><th>Restant</th>
+                <th>Recettes</th><th>Bénéfice</th><th>Statut</th>
+              </tr>
+            </thead>
+            <tbody id="prod-history-body"><!-- Rempli par JS --></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="screen" id="screen-historique">
+      <div class="period-tabs">
+        <button class="period-tab active" onclick="setPeriod(this,'jour')">Aujourd'hui</button>
+        <button class="period-tab" onclick="setPeriod(this,'semaine')">Cette semaine</button>
+        <button class="period-tab" onclick="setPeriod(this,'mois')">Ce mois</button>
+      </div>
+
+      <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="metric">
+          <div class="metric-label">Chiffre d'affaires</div>
+          <div class="metric-value" id="h-ca">94 000 F</div>
+          <div class="metric-change up">↑ Cette période</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Bénéfice net</div>
+          <div class="metric-value" style="color:var(--green)" id="h-ben">36 280 F</div>
+          <div class="metric-change">Marge <span class="up">38.6%</span></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Bouteilles vendues</div>
+          <div class="metric-value" id="h-qte">47</div>
+          <div class="metric-change up">↑ Vs période préc.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Évolution du bénéfice</div>
+        <div style="height:200px;position:relative"><canvas id="histoChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Journal des ventes</div>
+        <table class="data-table">
+          <thead><tr><th>Date / Heure</th><th>Produit</th><th>Quantité</th><th>Montant</th><th>Coût prod.</th><th>Bénéfice</th></tr></thead>
+          <tbody id="histo-journal-body">
+            <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Aucune vente enregistrée pour cette période.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== RAPPORTS ========== -->
+    <div class="screen" id="screen-rapports">
+      <div class="section-header">
+        <div class="section-title">Rapports & Exportations</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+        <div class="card">
+          <div class="card-title">Rapport journalier</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Ventes, stock et bénéfices du jour en cours. Idéal pour la clôture de caisse.</p>
+          <button class="btn btn-primary btn-sm" onclick="exportCSV('jour')">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exporter CSV
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-title">Rapport hebdomadaire</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Synthèse des 7 derniers jours par produit avec évolution des bénéfices.</p>
+          <button class="btn btn-primary btn-sm" onclick="exportCSV('semaine')">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exporter CSV
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-title">Rapport mensuel</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Analyse complète du mois : chiffre d'affaires, marges, produits les plus rentables.</p>
+          <button class="btn btn-primary btn-sm" onclick="exportCSV('mois')">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exporter CSV
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-title">État des stocks</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Inventaire complet avec niveaux actuels, alertes et historique des mouvements.</p>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV('stock')">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exporter CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Zone réinitialisation -->
+      <div class="card" style="margin-top:14px;border:1px solid #F7C1C1;background:var(--red-light)" data-admin-only>
+        <div class="card-title" style="color:var(--red)">Zone de danger</div>
+        <p style="font-size:13px;color:var(--red);margin-bottom:14px;line-height:1.6">Réinitialise toutes les données de l'application (ventes, stocks, crédits, production). Les produits et leurs prix sont conservés. Action irréversible.</p>
+        <button class="btn btn-danger btn-sm" onclick="dbReset()">
+          ⚠️ Réinitialiser toutes les données
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ===== MODAL ENCAISSER CRÉDIT ===== -->
+<div class="modal-overlay" id="modal-encaissement">
+  <div class="modal">
+    <div class="modal-title">Encaisser un paiement</div>
+    <div id="encaissement-info" style="background:var(--bg3);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--text2)"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Montant encaissé (F CFA)</label>
+        <input class="form-input" id="enc-montant" type="number" placeholder="Montant total ou partiel"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date d'encaissement</label>
+        <input class="form-input" id="enc-date" type="date" style="font-family:'DM Sans',sans-serif"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note (facultatif)</label>
+      <input class="form-input" id="enc-note" placeholder="ex: Réglé en espèces au marché"/>
+    </div>
+    <div id="enc-partiel-info" style="display:none;font-size:12px;color:var(--amber);padding:8px 12px;background:var(--amber-light);border-radius:var(--radius);margin-bottom:4px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-encaissement')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmerEncaissement()" style="background:var(--green)">✓ Confirmer l'encaissement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL PRODUIT ===== -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal">
+    <div class="modal-title" id="modal-product-title">Ajouter un jus</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nom du jus</label>
+        <input class="form-input" id="f-nom" placeholder="ex: Tamarin"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prix de vente (F CFA)</label>
+        <input class="form-input" id="f-prix" type="number" placeholder="2000" oninput="updateProdModalCalc()"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description / ingrédients</label>
+      <input class="form-input" id="f-desc" placeholder="ex: Fleurs d'hibiscus · sucre · eau"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Coût de production (F CFA / bouteille)</label>
+        <input class="form-input" id="f-cout" type="number" placeholder="1200" oninput="updateProdModalCalc()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Couleur d'identification</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="form-input" id="f-couleur" type="color" value="#E24B4A" style="height:38px;padding:4px 8px;cursor:pointer;flex:1" oninput="document.getElementById('couleur-preview').style.background=this.value"/>
+          <div id="couleur-preview" style="width:38px;height:38px;border-radius:10px;background:#E24B4A;flex-shrink:0;border:1px solid var(--border)"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Aperçu marge -->
+    <div id="prod-modal-calc" style="display:none;background:var(--bg3);border-radius:var(--radius);padding:10px 14px;margin-bottom:4px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;border:1px solid var(--border);overflow:hidden">
+      <div style="background:var(--bg2);padding:10px;text-align:center;border-radius:var(--radius) 0 0 var(--radius)">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px">PRIX VENTE</div>
+        <div style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace" id="pmc-prix">—</div>
+      </div>
+      <div style="background:var(--bg2);padding:10px;text-align:center;border:none">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px">COÛT PROD.</div>
+        <div style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--amber)" id="pmc-cout">—</div>
+      </div>
+      <div style="background:var(--bg2);padding:10px;text-align:center;border-radius:0 var(--radius) var(--radius) 0">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px">BÉNÉFICE</div>
+        <div style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace" id="pmc-ben">—</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-product')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveProduct()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL STOCK ===== -->
+<div class="modal-overlay" id="modal-stock">
+  <div class="modal" style="width:520px">
+    <div class="modal-title" id="stock-modal-title">Gestion du stock</div>
+
+    <!-- Onglets du modal -->
+    <div style="display:flex;gap:6px;margin-bottom:20px;background:var(--bg3);border-radius:var(--radius);padding:4px" id="stock-modal-tabs">
+      <button class="stock-tab active" id="tab-appro"   onclick="switchStockTab('appro')"   style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:var(--bg2);color:var(--text);font-family:'DM Sans',sans-serif;box-shadow:var(--shadow)">📦 Approvisionner</button>
+      <button class="stock-tab"        id="tab-modifier" onclick="switchStockTab('modifier')" style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif">✏️ Modifier</button>
+      <button class="stock-tab"        id="tab-ajouter"  onclick="switchStockTab('ajouter')"  style="flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif">➕ Nouvelle matière</button>
+    </div>
+
+    <!-- ONGLET : APPROVISIONNER -->
+    <div id="panel-appro">
+      <div class="form-group">
+        <label class="form-label">Matière première à réapprovisionner</label>
+        <select class="form-input" id="f-ingredient" onchange="onApproIngredientChange()"></select>
+      </div>
+      <div style="background:var(--bg3);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)" id="appro-stock-info">—</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Quantité ajoutée</label>
+          <div style="display:flex;gap:6px">
+            <input class="form-input" id="f-qty-stock" type="number" placeholder="ex: 5" style="flex:1"/>
+            <span style="display:flex;align-items:center;padding:0 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);font-size:12px;font-weight:500;color:var(--text2);white-space:nowrap" id="appro-unite-display">kg</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Coût d'achat (F CFA)</label>
+          <input class="form-input" id="f-cout-stock" type="number" placeholder="ex: 5 000"/>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-stock')">Annuler</button>
+        <button class="btn btn-primary" onclick="saveAppro()">✓ Confirmer l'entrée</button>
+      </div>
+    </div>
+
+    <!-- ONGLET : MODIFIER -->
+    <div id="panel-modifier" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Matière première à modifier</label>
+        <select class="form-input" id="f-mod-ingredient" onchange="onModIngredientChange()"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nom de la matière</label>
+          <input class="form-input" id="f-mod-nom" placeholder="ex: Fleurs de bissap"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unité de mesure</label>
+          <div style="display:flex;gap:6px">
+            <select class="form-input" id="f-mod-unite" onchange="toggleCustomUnite(this.value)" style="flex:1">
+              <option value="kg">kg — kilogramme</option>
+              <option value="g">g — gramme</option>
+              <option value="L">L — litre</option>
+              <option value="cL">cL — centilitre</option>
+              <option value="pcs">pcs — pièces</option>
+              <option value="sac">sac</option>
+              <option value="carton">carton</option>
+              <option value="autre">Autre...</option>
+            </select>
+          </div>
+          <input class="form-input" id="f-mod-unite-custom" placeholder="Saisir l'unité" style="display:none;margin-top:6px"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Stock actuel</label>
+          <input class="form-input" id="f-mod-stock" type="number" step="0.01" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Seuil d'alerte</label>
+          <input class="form-input" id="f-mod-seuil" type="number" step="0.01" placeholder="0"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coût unitaire (F CFA / unité)</label>
+        <input class="form-input" id="f-mod-cout" type="number" placeholder="ex: 3 500"/>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-stock')">Annuler</button>
+        <button class="btn btn-danger btn-sm" onclick="supprimerIngredient()">Supprimer</button>
+        <button class="btn btn-primary" onclick="saveModification()">✓ Enregistrer les modifications</button>
+      </div>
+    </div>
+
+    <!-- ONGLET : AJOUTER NOUVELLE MATIÈRE -->
+    <div id="panel-ajouter" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nom de la matière première</label>
+          <input class="form-input" id="f-new-nom" placeholder="ex: Citrons, Menthe fraîche..."/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unité de mesure</label>
+          <select class="form-input" id="f-new-unite" onchange="toggleNewCustomUnite(this.value)">
+            <option value="kg">kg — kilogramme</option>
+            <option value="g">g — gramme</option>
+            <option value="L">L — litre</option>
+            <option value="cL">cL — centilitre</option>
+            <option value="pcs">pcs — pièces</option>
+            <option value="sac">sac</option>
+            <option value="carton">carton</option>
+            <option value="autre">Autre...</option>
+          </select>
+          <input class="form-input" id="f-new-unite-custom" placeholder="Saisir l'unité" style="display:none;margin-top:6px"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Stock initial</label>
+          <input class="form-input" id="f-new-stock" type="number" step="0.01" placeholder="0"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Seuil d'alerte</label>
+          <input class="form-input" id="f-new-seuil" type="number" step="0.01" placeholder="ex: 2"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coût unitaire (F CFA / unité)</label>
+        <input class="form-input" id="f-new-cout" type="number" placeholder="ex: 1 500"/>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('modal-stock')">Annuler</button>
+        <button class="btn btn-primary" onclick="saveNouvelleMatiere()">✓ Ajouter la matière</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================
+// JUSNAT PRO — Client API
+// Toutes les données sont persistées via l'API REST
+// =========================================================
+
+// URL de l'API — en production Railway remplace automatiquement
+// En développement local : http://localhost:3000
+var API_URL = window.location.origin;
+
+// ===== TOKEN JWT =====
+var authToken = localStorage.getItem('jusnat_token') || null;
+
+function apiHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': authToken ? 'Bearer ' + authToken : ''
+  };
+}
+
+async function api(method, path, body) {
+  var opts = { method: method, headers: apiHeaders() };
+  if (body) opts.body = JSON.stringify(body);
+  var res = await fetch(API_URL + '/api' + path, opts);
+  if (res.status === 401) { logout(); return null; }
+  if (!res.ok) {
+    var err = await res.json().catch(function() { return {}; });
+    throw new Error(err.error || 'Erreur ' + res.status);
+  }
+  return res.json();
+}
+
+// ===== ÉTAT LOCAL (cache des données chargées) =====
+var PRODUITS    = [];
+var STOCK       = [];
+var VENTES      = [];
+var CREDITS     = [];
+var PRODUCTIONS = [];
+
+var currentJus          = '';
+var currentPrice        = 2000;
+var qty                 = 1;
+var currentPayMode      = 'cash';
+var editingProductId    = null;
+var editingStockId      = null;
+var encaissementCreditId= null;
+var creditFilter        = 'tous';
+var chartsInitialized   = false;
+var histoInit           = false;
+var ADMIN_ONLY_SCREENS  = ['produits','stock','production','rapports'];
+var currentUser         = null;
+
+// ===== HELPERS UI =====
+function showLoading(msg) {
+  var el = document.getElementById('loading-overlay');
+  if (el) { el.querySelector('span').textContent = msg || 'Chargement...'; el.style.display='flex'; }
+}
+function hideLoading() {
+  var el = document.getElementById('loading-overlay');
+  if (el) el.style.display='none';
+}
+function showError(msg) {
+  var el = document.getElementById('global-error');
+  if (el) { el.textContent = msg; el.style.display='block'; setTimeout(function(){el.style.display='none';},4000); }
+}
+
+// ===== AUTHENTIFICATION =====
+function selectLoginUser(role) {
+  document.getElementById('card-admin').classList.toggle('selected',   role === 'admin');
+  document.getElementById('card-vendeur').classList.toggle('selected', role === 'vendeur');
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-pwd').value = '';
+  document.getElementById('login-email').value = role === 'admin' ? 'admin@jusnat.ci' : 'vendeur@jusnat.ci';
+  document.getElementById('login-pwd').focus();
+}
+
+async function doLogin() {
+  var email  = document.getElementById('login-email').value.trim();
+  var pwd    = document.getElementById('login-pwd').value;
+  var errEl  = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  if (!email || !pwd) { errEl.textContent='Veuillez remplir tous les champs.'; errEl.style.display='block'; return; }
+
+  var btnLogin = document.querySelector('.btn-login');
+  btnLogin.textContent = 'Connexion en cours...';
+  btnLogin.disabled    = true;
+
+  try {
+    var data = await api('POST', '/auth/login', { email: email, password: pwd });
+    if (!data) return;
+    authToken  = data.token;
+    currentUser= { id: data.user.id, role: data.user.role, label: data.user.nom,
+                   color: data.user.role==='admin'?'#534AB7':'#1D9E75', initial: data.user.nom[0].toUpperCase() };
+    localStorage.setItem('jusnat_token', authToken);
+    document.getElementById('login-screen').style.display = 'none';
+    await afterLogin();
+  } catch(e) {
+    errEl.textContent = e.message || 'Identifiants incorrects.';
+    errEl.style.display = 'block';
+    document.getElementById('login-pwd').value = '';
+  } finally {
+    btnLogin.textContent = 'Se connecter';
+    btnLogin.disabled    = false;
+  }
+}
+
+async function afterLogin() {
+  applyRoleUI();
+  chartsInitialized = false;
+  histoInit = false;
+  showLoading('Chargement des données...');
+  try {
+    await Promise.all([ loadProduits(), loadStock(), loadCredits() ]);
+    await loadVentesJour();
+    initCharts();
+    updateDashboardFromAPI();
+    updateCreditBadge();
+  } catch(e) {
+    showError('Erreur au chargement : ' + e.message);
+  } finally {
+    hideLoading();
+  }
+}
+
+function logout() {
+  authToken = null;
+  currentUser = null;
+  localStorage.removeItem('jusnat_token');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pwd').value = '';
+}
+
+// ===== CHARGEMENT DES DONNÉES DEPUIS L'API =====
+async function loadProduits() {
+  PRODUITS = await api('GET', '/produits') || [];
+  // Normaliser les champs pour compatibilité avec l'UI
+  PRODUITS = PRODUITS.map(function(p) {
+    return { id:p.id, nom:p.nom, desc:p.description||'', prix:parseInt(p.prix_vente),
+             cout:parseInt(p.cout_prod), couleur:p.couleur||'#1D9E75', color2:p.couleur2||'#0F6E56' };
+  });
+  if (PRODUITS.length > 0) { currentJus = PRODUITS[0].nom; currentPrice = PRODUITS[0].prix; }
+}
+
+async function loadStock() {
+  STOCK = await api('GET', '/stock') || [];
+  STOCK = STOCK.map(function(s) {
+    return { id:s.id, nom:s.nom, stock:parseFloat(s.stock_actuel), unite:s.unite,
+             seuil:parseFloat(s.seuil_alerte), cout:parseInt(s.cout_unitaire), alerte:s.alerte };
+  });
+}
+
+async function loadVentesJour() {
+  var ventes = await api('GET', '/ventes?periode=jour') || [];
+  var tbody   = document.getElementById('sales-log-body');
+  tbody.innerHTML = '';
+  ventes.forEach(function(v) {
+    var h   = new Date(v.created_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+    var tr  = document.createElement('tr');
+    var badge = v.mode_paiement === 'credit'
+      ? '<span class="badge badge-amber">Credit</span>'
+      : '<span class="badge badge-green">Paye</span>';
+    tr.innerHTML = '<td style="color:var(--text3);font-size:12px">' + h + '</td>' +
+      '<td>' + v.produit_nom + '</td><td>' + v.quantite + '</td>' +
+      '<td>' + parseInt(v.montant_total).toLocaleString('fr-FR') + ' F</td>' +
+      '<td>' + badge + '</td>' +
+      '<td><span class="badge badge-green">+' + parseInt(v.benefice).toLocaleString('fr-FR') + ' F</span></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+async function loadCredits() {
+  var raw = await api('GET', '/credits') || [];
+  CREDITS = raw.map(function(c) {
+    return { id:c.id, date:c.date_vente||'', heure:c.heure_vente||'',
+             produit:c.produit_nom, qty:c.quantite, montant:parseInt(c.montant_total),
+             paye:parseInt(c.montant_paye), client:c.client_nom, echeance:c.echeance,
+             note:c.note||'', statut:c.statut };
+  });
+}
+
+async function loadProductions() {
+  var raw = await api('GET', '/productions') || [];
+  PRODUCTIONS = raw.map(function(p) {
+    return { id:p.id, date:p.date_prod, produit:p.produit_nom,
+             cout:parseInt(p.cout_ingredients), produites:p.bouteilles_prod,
+             vendues:p.bouteilles_vend, recettes:parseInt(p.recettes), benefice:parseInt(p.benefice) };
+  });
+}
+
+// ===== DASHBOARD =====
+async function updateDashboardFromAPI() {
+  try {
+    var data = await api('GET', '/ventes/dashboard');
+    if (!data) return;
+    document.getElementById('m-ca').textContent      = parseInt(data.ca).toLocaleString('fr-FR') + ' F';
+    document.getElementById('m-ben').textContent     = parseInt(data.benefice).toLocaleString('fr-FR') + ' F';
+    document.getElementById('m-ventes').textContent  = data.qte_jour;
+    document.getElementById('m-alertes').textContent = data.alertes;
+    var marge = data.ca > 0 ? Math.round((data.benefice / data.ca) * 100) : 0;
+    var benNext = document.getElementById('m-ben').nextElementSibling;
+    if (benNext) benNext.textContent = 'Marge ' + marge + '%';
+  } catch(e) { console.warn('Dashboard:', e.message); }
+}
+
+// ===== NAVIGATION =====
+var SCREEN_TITLES = {
+  dashboard:'Tableau de bord', ventes:'Enregistrer une vente',
+  produits:'Gestion des produits', stock:'Gestion des stocks',
+  production:'Gestion de la production', paiements:'Paiements differés',
+  historique:'Historique des ventes', rapports:'Rapports & Exportations'
+};
+
+function showScreen(name, navEl) {
+  if (window.innerWidth <= 768) { mobileNav(name); return; }
+  if (currentUser && currentUser.role !== 'admin' && ADMIN_ONLY_SCREENS.indexOf(name) !== -1) {
+    showGuardToast('Section reservee a l\'administrateur'); return;
+  }
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('page-title').textContent = SCREEN_TITLES[name] || name;
+  if (navEl && !navEl.classList.contains('locked')) navEl.classList.add('active');
+  loadScreen(name);
+}
+
+async function loadScreen(name) {
+  showLoading();
+  try {
+    if (name === 'dashboard')  { initCharts(); await updateDashboardFromAPI(); }
+    if (name === 'historique') { initHistoChart(); await setPeriod(document.querySelector('.period-tab'), 'jour'); }
+    if (name === 'produits')   { await loadProduits(); renderProducts(); refreshAdminButtons(); }
+    if (name === 'stock')      { await loadStock(); renderStock(); refreshAdminButtons(); }
+    if (name === 'production') { await loadProductions(); await initProduction(); }
+    if (name === 'paiements')  { await loadCredits(); renderCredits(); await updateCreditKPIs(); }
+  } catch(e) { showError(e.message); }
+  finally    { hideLoading(); }
+}
+
+// ===== RÔLES =====
+function applyRoleUI() {
+  var isAdmin = currentUser.role === 'admin';
+  document.getElementById('sidebar-user-avatar').textContent      = currentUser.initial;
+  document.getElementById('sidebar-user-avatar').style.background = currentUser.color;
+  document.getElementById('sidebar-user-name').textContent        = currentUser.label;
+  document.getElementById('sidebar-user-role').textContent        = isAdmin ? 'Acces complet' : 'Acces restreint';
+  var rb = document.getElementById('topbar-role-badge');
+  rb.textContent = isAdmin ? 'Admin' : 'Vendeur';
+  rb.className   = isAdmin ? 'role-badge-admin' : 'role-badge-vendeur';
+  document.querySelectorAll('.nav-item[data-screen]').forEach(function(el) {
+    var sc = el.getAttribute('data-screen');
+    if (!isAdmin && ADMIN_ONLY_SCREENS.indexOf(sc) !== -1) { el.classList.add('locked'); el.title='Admin uniquement'; }
+    else { el.classList.remove('locked'); el.title=''; }
+  });
+  refreshAdminButtons();
+}
+
+function refreshAdminButtons() {
+  var isAdmin = currentUser && currentUser.role === 'admin';
+  document.querySelectorAll('[data-admin-only]').forEach(function(el) {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+}
+
+function guardAdmin() {
+  if (!currentUser || currentUser.role !== 'admin') { showGuardToast('Acces reserve a l\'administrateur'); return false; }
+  return true;
+}
+function showGuardToast(msg) {
+  var t = document.getElementById('guard-toast');
+  t.querySelector('span').textContent = msg || 'Acces refuse';
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// ===== MODE PAIEMENT =====
+function selectPayMode(mode) {
+  currentPayMode = mode;
+  var cashBtn   = document.getElementById('pm-cash');
+  var deferBtn  = document.getElementById('pm-defer');
+  var deferFlds = document.getElementById('defer-fields');
+  var confirmBtn= document.getElementById('btn-confirm-sale');
+  var modeLabel = document.getElementById('sale-mode-label');
+  if (mode === 'cash') {
+    cashBtn.className='pay-mode-btn selected-cash'; deferBtn.className='pay-mode-btn';
+    deferFlds.classList.remove('show');
+    confirmBtn.style.background='var(--green)';
+    confirmBtn.textContent='Confirmer la vente — Paiement immediat';
+    modeLabel.textContent='Total a encaisser';
+  } else {
+    deferBtn.className='pay-mode-btn selected-defer'; cashBtn.className='pay-mode-btn';
+    deferFlds.classList.add('show');
+    var d = new Date(); d.setDate(d.getDate()+7);
+    document.getElementById('v-echeance').value = d.toISOString().slice(0,10);
+    confirmBtn.style.background='var(--amber)';
+    confirmBtn.textContent='Enregistrer — Paiement differe';
+    modeLabel.textContent='Montant du credit';
+  }
+}
+
+// ===== VENTE =====
+function selectJus(el, nom, prix) {
+  document.querySelectorAll('.jus-card').forEach(function(c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+  currentJus=nom; currentPrice=prix; updateSaleTotal();
+}
+function changeQty(d) {
+  qty=Math.max(1,qty+d);
+  document.getElementById('qty-display').textContent=qty;
+  updateSaleTotal();
+}
+function updateSaleTotal() {
+  document.getElementById('sale-total').textContent  = (qty*currentPrice).toLocaleString('fr-FR')+' F';
+  document.getElementById('sale-detail').textContent = qty+' x '+currentPrice.toLocaleString('fr-FR')+' F';
+}
+
+async function confirmSale() {
+  var prod = PRODUITS.find(function(p) { return p.nom === currentJus; });
+  if (!prod) { showError('Produit non trouvé'); return; }
+  var body = { produit_id: prod.id, quantite: qty, mode_paiement: currentPayMode };
+
+  if (currentPayMode === 'credit') {
+    var client   = document.getElementById('v-client').value.trim();
+    var echeance = document.getElementById('v-echeance').value;
+    var note     = document.getElementById('v-note').value.trim();
+    if (!client)   { alert('Veuillez renseigner le nom du client.'); return; }
+    if (!echeance) { alert('Veuillez indiquer une date d\'echeance.'); return; }
+    body.client_nom=client; body.echeance=echeance; body.note=note;
+  }
+
+  var btn = document.getElementById('btn-confirm-sale');
+  btn.disabled=true; btn.textContent='Enregistrement...';
+
+  try {
+    var vente = await api('POST', '/ventes', body);
+    if (!vente) return;
+    // Ajouter dans le journal
+    var h   = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    var tbody= document.getElementById('sales-log-body');
+    var tr  = document.createElement('tr');
+    var badge = currentPayMode==='credit'
+      ? '<span class="badge badge-amber">Credit</span>'
+      : '<span class="badge badge-green">Paye</span>';
+    tr.innerHTML='<td style="color:var(--text3);font-size:12px">'+h+'</td><td>'+currentJus+'</td><td>'+qty+'</td>'+
+      '<td>'+(qty*currentPrice).toLocaleString('fr-FR')+' F</td><td>'+badge+'</td>'+
+      '<td><span class="badge badge-green">+'+parseInt(vente.benefice).toLocaleString('fr-FR')+' F</span></td>';
+    tbody.insertBefore(tr, tbody.firstChild);
+
+    if (currentPayMode==='credit') {
+      await loadCredits(); updateCreditBadge();
+      showToast('sale-toast','Credit enregistre pour '+body.client_nom,'amber');
+      document.getElementById('v-client').value='';
+      document.getElementById('v-note').value='';
+      selectPayMode('cash');
+    } else {
+      showToast('sale-toast','Vente enregistree !','green');
+    }
+    qty=1; document.getElementById('qty-display').textContent='1'; updateSaleTotal();
+  } catch(e) {
+    showError(e.message);
+  } finally {
+    btn.disabled=false;
+    btn.textContent = currentPayMode==='credit' ? 'Enregistrer — Paiement differe' : 'Confirmer la vente — Paiement immediat';
+  }
+}
+
+function showToast(id, msg, color) {
+  var toast=document.getElementById(id);
+  var msgEl=document.getElementById(id+'-msg');
+  if (msgEl) msgEl.textContent=msg;
+  toast.style.background = color==='amber'?'var(--amber-light)':'';
+  toast.style.borderColor= color==='amber'?'#F0D49A':'';
+  toast.style.color      = color==='amber'?'#633806':'';
+  toast.style.display='flex';
+  setTimeout(function(){toast.style.display='none';toast.style.background='';toast.style.borderColor='';toast.style.color='';},3500);
+}
+
+// ===== PRODUITS =====
+function renderProducts() {
+  var g = document.getElementById('products-grid');
+  if (!g) return;
+  if (PRODUITS.length===0) {
+    g.innerHTML='<p style="color:var(--text3);font-size:13px;padding:20px">Aucun produit. Cliquez sur "Ajouter un jus".</p>';
+    // Mettre à jour aussi les cartes de vente
+    document.getElementById('jus-grid-container') && updateJusCards();
+    return;
+  }
+  g.innerHTML=PRODUITS.map(function(p) {
+    return '<div class="product-card">'+
+      '<div class="prod-header">'+
+        '<div class="prod-thumb" style="background:linear-gradient(135deg,'+p.couleur+','+(p.color2||p.couleur)+')"></div>'+
+        '<div><div class="prod-name">'+p.nom+'</div><div class="prod-desc">'+p.desc+'</div></div>'+
+      '</div>'+
+      '<div class="prod-stats">'+
+        '<div class="prod-stat"><div class="prod-stat-val">'+p.prix.toLocaleString('fr-FR')+' F</div><div class="prod-stat-lbl">Prix vente</div></div>'+
+        '<div class="prod-stat"><div class="prod-stat-val">'+p.cout.toLocaleString('fr-FR')+' F</div><div class="prod-stat-lbl">Cout prod.</div></div>'+
+        '<div class="prod-stat"><div class="prod-stat-val" style="color:var(--green)">'+(p.prix-p.cout).toLocaleString('fr-FR')+' F</div><div class="prod-stat-lbl">Benefice</div></div>'+
+      '</div>'+
+      '<div class="prod-actions" data-admin-only>'+
+        '<button class="btn btn-secondary btn-sm" onclick="openProductModal('+p.id+')">Modifier</button>'+
+        '<button class="btn btn-danger btn-sm" onclick="deleteProduct('+p.id+')">Supprimer</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  updateJusCards();
+  refreshAdminButtons();
+}
+
+function updateJusCards() {
+  var grid = document.querySelector('.jus-grid');
+  if (!grid) return;
+  grid.innerHTML = PRODUITS.map(function(p) {
+    return '<div class="jus-card" onclick="selectJus(this,\''+p.nom+'\','+p.prix+')">'+
+      '<div class="jus-thumb" style="background:linear-gradient(135deg,'+p.couleur+','+(p.color2||p.couleur)+')"></div>'+
+      '<div class="jus-card-name">'+p.nom+'</div>'+
+      '<div class="jus-card-desc">'+p.desc+'</div>'+
+      '<div class="jus-card-price">'+p.prix.toLocaleString('fr-FR')+' F CFA</div>'+
+    '</div>';
+  }).join('');
+  if (PRODUITS.length>0) { currentJus=PRODUITS[0].nom; currentPrice=PRODUITS[0].prix; updateSaleTotal(); grid.querySelector('.jus-card').classList.add('selected'); }
+}
+
+function updateProdModalCalc() {
+  var prix=parseInt(document.getElementById('f-prix').value)||0;
+  var cout=parseInt(document.getElementById('f-cout').value)||0;
+  var calc=document.getElementById('prod-modal-calc');
+  if (prix>0||cout>0) {
+    calc.style.display='grid';
+    document.getElementById('pmc-prix').textContent=prix>0?prix.toLocaleString('fr-FR')+' F':'—';
+    document.getElementById('pmc-cout').textContent=cout>0?cout.toLocaleString('fr-FR')+' F':'—';
+    var ben=prix-cout;
+    var el=document.getElementById('pmc-ben');
+    el.textContent=(prix>0&&cout>0)?((ben>=0?'+':'')+ben.toLocaleString('fr-FR')+' F'):'—';
+    el.style.color=ben>=0?'var(--green)':'var(--red)';
+  } else { calc.style.display='none'; }
+}
+
+function openProductModal(id) {
+  if (!guardAdmin()) return;
+  id = id!==undefined ? Number(id) : null;
+  editingProductId=id;
+  document.getElementById('modal-product-title').textContent = id?'Modifier le jus':'Ajouter un jus';
+  if (id) {
+    var p=PRODUITS.find(function(x){return Number(x.id)===id;});
+    if (!p) { alert('Produit introuvable.'); return; }
+    document.getElementById('f-nom').value=p.nom;
+    document.getElementById('f-prix').value=p.prix;
+    document.getElementById('f-desc').value=p.desc;
+    document.getElementById('f-cout').value=p.cout;
+    document.getElementById('f-couleur').value=p.couleur;
+    var prev=document.getElementById('couleur-preview');
+    if (prev) prev.style.background=p.couleur;
+    updateProdModalCalc();
+  } else {
+    ['f-nom','f-prix','f-desc','f-cout'].forEach(function(i){document.getElementById(i).value='';});
+    document.getElementById('f-couleur').value='#E24B4A';
+    var prev2=document.getElementById('couleur-preview'); if(prev2) prev2.style.background='#E24B4A';
+    var calc=document.getElementById('prod-modal-calc'); if(calc) calc.style.display='none';
+  }
+  document.getElementById('modal-product').classList.add('show');
+}
+
+async function saveProduct() {
+  var nom=document.getElementById('f-nom').value.trim();
+  var prix=parseInt(document.getElementById('f-prix').value)||0;
+  var desc=document.getElementById('f-desc').value.trim();
+  var cout=parseInt(document.getElementById('f-cout').value)||0;
+  var couleur=document.getElementById('f-couleur').value;
+  if (!nom||!prix) { alert('Veuillez remplir le nom et le prix.'); return; }
+  var body={ nom:nom, description:desc, prix_vente:prix, cout_prod:cout, couleur:couleur, couleur2:couleur };
+  try {
+    if (editingProductId) { await api('PUT', '/produits/'+editingProductId, body); }
+    else                  { await api('POST', '/produits', body); }
+    await loadProduits(); renderProducts();
+    closeModal('modal-product');
+  } catch(e) { showError(e.message); }
+}
+
+async function deleteProduct(id) {
+  if (!guardAdmin()) return;
+  if (!confirm('Supprimer ce produit ?')) return;
+  try { await api('DELETE', '/produits/'+id); await loadProduits(); renderProducts(); }
+  catch(e) { showError(e.message); }
+}
+
+// ===== STOCK =====
+function populateStockSelects() {
+  var opts=STOCK.map(function(s){return '<option value="'+s.id+'">'+s.nom+' ('+s.stock+' '+s.unite+')</option>';}).join('');
+  var optsM=STOCK.map(function(s){return '<option value="'+s.id+'">'+s.nom+'</option>';}).join('');
+  var el1=document.getElementById('f-ingredient'); if(el1) el1.innerHTML=opts;
+  var el2=document.getElementById('f-mod-ingredient'); if(el2) el2.innerHTML=optsM;
+  onApproIngredientChange(); onModIngredientChange();
+}
+
+function switchStockTab(tab) {
+  ['appro','modifier','ajouter'].forEach(function(t) {
+    document.getElementById('panel-'+t).style.display=t===tab?'block':'none';
+    var btn=document.getElementById('tab-'+t);
+    if(t===tab){btn.style.background='var(--bg2)';btn.style.color='var(--text)';btn.style.boxShadow='var(--shadow)';}
+    else{btn.style.background='transparent';btn.style.color='var(--text2)';btn.style.boxShadow='none';}
+  });
+  if(tab==='modifier') onModIngredientChange();
+}
+
+function onApproIngredientChange() {
+  var sel=document.getElementById('f-ingredient'); if(!sel) return;
+  var s=STOCK.find(function(x){return String(x.id)===sel.value;});
+  var info=document.getElementById('appro-stock-info');
+  var uEl=document.getElementById('appro-unite-display');
+  if(s){ info.innerHTML='Stock actuel : <strong>'+s.stock+' '+s.unite+'</strong> · Seuil : '+s.seuil+' '+s.unite; if(uEl) uEl.textContent=s.unite; }
+}
+
+function onModIngredientChange() {
+  var sel=document.getElementById('f-mod-ingredient'); if(!sel) return;
+  var s=STOCK.find(function(x){return String(x.id)===sel.value;});
+  if(!s) return;
+  document.getElementById('f-mod-nom').value=s.nom;
+  document.getElementById('f-mod-stock').value=s.stock;
+  document.getElementById('f-mod-seuil').value=s.seuil;
+  document.getElementById('f-mod-cout').value=s.cout;
+  var knownUnits=['kg','g','L','cL','pcs','sac','carton'];
+  var us=document.getElementById('f-mod-unite'); var ci=document.getElementById('f-mod-unite-custom');
+  if(knownUnits.indexOf(s.unite)!==-1){us.value=s.unite;ci.style.display='none';}
+  else{us.value='autre';ci.style.display='block';ci.value=s.unite;}
+}
+
+function toggleCustomUnite(val){var c=document.getElementById('f-mod-unite-custom');c.style.display=val==='autre'?'block':'none';if(val!=='autre')c.value='';}
+function toggleNewCustomUnite(val){var c=document.getElementById('f-new-unite-custom');c.style.display=val==='autre'?'block':'none';if(val!=='autre')c.value='';}
+
+function renderStock() {
+  var alerts=STOCK.filter(function(s){return s.alerte;});
+  var ac=document.getElementById('alerts-container');
+  if(alerts.length===0){ ac.innerHTML='<p style="font-size:13px;color:var(--text3)">Aucune alerte. Tous les stocks sont suffisants.</p>'; }
+  else {
+    ac.innerHTML=alerts.map(function(s){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--red-light);border-radius:var(--radius);margin-bottom:8px;border:1px solid #F7C1C1">'+
+        '<span style="font-size:13px;color:var(--red);font-weight:500">&#9888; '+s.nom+' — '+s.stock+' '+s.unite+' (seuil : '+s.seuil+')</span>'+
+        '<button class="btn btn-danger btn-sm" onclick="openStockModal(\'appro\',\''+s.id+'\')">Reapprovisionner</button></div>';
+    }).join('');
+  }
+  var alertCount=alerts.length;
+  document.getElementById('stock-badge').textContent=alertCount;
+  var bnavSt=document.getElementById('bnav-stock-badge'); var drawSt=document.getElementById('drawer-stock-badge');
+  if(bnavSt){bnavSt.textContent=alertCount;bnavSt.style.display=alertCount>0?'block':'none';}
+  if(drawSt){drawSt.textContent=alertCount;drawSt.style.display=alertCount>0?'inline-flex':'none';}
+
+  var tbody=document.getElementById('stock-tbody');
+  tbody.innerHTML=STOCK.map(function(s){
+    return '<tr>'+
+      '<td style="font-weight:500">'+s.nom+'</td>'+
+      '<td style="font-family:monospace">'+s.stock+'</td>'+
+      '<td><span class="badge badge-gray" style="cursor:pointer" onclick="openStockModal(\'modifier\',\''+s.id+'\')" title="Modifier">'+s.unite+' &#9998;</span></td>'+
+      '<td style="font-family:monospace;color:var(--text3)">'+s.seuil+' '+s.unite+'</td>'+
+      '<td style="font-family:monospace">'+s.cout.toLocaleString('fr-FR')+' F</td>'+
+      '<td>'+(s.alerte?'<span class="badge badge-red">Stock faible</span>':'<span class="badge badge-green">OK</span>')+'</td>'+
+      '<td style="display:flex;gap:6px;justify-content:flex-end">'+
+        '<button class="btn btn-primary btn-sm" onclick="openStockModal(\'appro\',\''+s.id+'\')">+ Stock</button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="openStockModal(\'modifier\',\''+s.id+'\')">Modifier</button>'+
+      '</td></tr>';
+  }).join('');
+}
+
+function openStockModal(tab, stockId) {
+  if(!guardAdmin()) return;
+  tab=tab||'appro';
+  populateStockSelects();
+  if(stockId) {
+    var el1=document.getElementById('f-ingredient'); if(el1) el1.value=String(stockId);
+    var el2=document.getElementById('f-mod-ingredient'); if(el2) el2.value=String(stockId);
+    onApproIngredientChange(); onModIngredientChange();
+  }
+  switchStockTab(tab);
+  document.getElementById('modal-stock').classList.add('show');
+}
+
+async function saveAppro() {
+  var sel=document.getElementById('f-ingredient');
+  var q=parseFloat(document.getElementById('f-qty-stock').value)||0;
+  if(q<=0){alert('Veuillez saisir une quantite valide.');return;}
+  try {
+    await api('POST','/stock/'+sel.value+'/approvisionner',{quantite:q});
+    await loadStock(); renderStock();
+    document.getElementById('f-qty-stock').value='';
+    document.getElementById('f-cout-stock').value='';
+    closeModal('modal-stock');
+  } catch(e){ showError(e.message); }
+}
+
+async function saveModification() {
+  var sel=document.getElementById('f-mod-ingredient');
+  var nom=document.getElementById('f-mod-nom').value.trim();
+  var uRaw=document.getElementById('f-mod-unite').value;
+  var unite=uRaw==='autre'?(document.getElementById('f-mod-unite-custom').value.trim()||uRaw):uRaw;
+  var stock=parseFloat(document.getElementById('f-mod-stock').value)||0;
+  var seuil=parseFloat(document.getElementById('f-mod-seuil').value)||0;
+  var cout=parseInt(document.getElementById('f-mod-cout').value)||0;
+  if(!nom){alert('Le nom ne peut pas etre vide.');return;}
+  try {
+    await api('PUT','/stock/'+sel.value,{nom:nom,stock_actuel:stock,unite:unite,seuil_alerte:seuil,cout_unitaire:cout});
+    await loadStock(); renderStock(); closeModal('modal-stock');
+  } catch(e){ showError(e.message); }
+}
+
+async function saveNouvelleMatiere() {
+  var nom=document.getElementById('f-new-nom').value.trim();
+  var uRaw=document.getElementById('f-new-unite').value;
+  var unite=uRaw==='autre'?(document.getElementById('f-new-unite-custom').value.trim()||'u'):uRaw;
+  var stock=parseFloat(document.getElementById('f-new-stock').value)||0;
+  var seuil=parseFloat(document.getElementById('f-new-seuil').value)||0;
+  var cout=parseInt(document.getElementById('f-new-cout').value)||0;
+  if(!nom){alert('Veuillez saisir un nom.');return;}
+  try {
+    await api('POST','/stock',{nom:nom,stock_actuel:stock,unite:unite,seuil_alerte:seuil,cout_unitaire:cout});
+    await loadStock(); renderStock();
+    ['f-new-nom','f-new-stock','f-new-seuil','f-new-cout'].forEach(function(i){document.getElementById(i).value='';});
+    document.getElementById('f-new-unite').value='kg';
+    document.getElementById('f-new-unite-custom').style.display='none';
+    closeModal('modal-stock');
+  } catch(e){ showError(e.message); }
+}
+
+async function supprimerIngredient() {
+  if(!guardAdmin()) return;
+  var sel=document.getElementById('f-mod-ingredient');
+  var s=STOCK.find(function(x){return String(x.id)===sel.value;});
+  if(!s||!confirm('Supprimer "'+s.nom+'" du stock ?')) return;
+  try { await api('DELETE','/stock/'+sel.value); await loadStock(); renderStock(); closeModal('modal-stock'); }
+  catch(e){ showError(e.message); }
+}
+
+function saveStock(){saveAppro();}
+
+// ===== MODALS =====
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.modal-overlay').forEach(function(o){
+  o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('show');});
+});
+
+// ===== PAIEMENTS DIFFÉRÉS =====
+function updateCreditBadge() {
+  var pending=CREDITS.filter(function(c){return c.statut!=='regle';}).length;
+  var badge=document.getElementById('credit-badge');
+  var bnavB=document.getElementById('bnav-credit-badge');
+  badge.textContent=pending; badge.style.display=pending>0?'inline-flex':'none';
+  if(bnavB){bnavB.textContent=pending;bnavB.style.display=pending>0?'block':'none';}
+}
+
+async function updateCreditKPIs() {
+  try {
+    var data=await api('GET','/credits/kpi');
+    document.getElementById('ck-total').textContent  =parseInt(data.total_du).toLocaleString('fr-FR')+' F';
+    document.getElementById('ck-count').textContent  =data.count_actifs;
+    document.getElementById('ck-overdue').textContent=data.count_retard;
+    document.getElementById('ck-paid').textContent   =parseInt(data.encaisse_mois).toLocaleString('fr-FR')+' F';
+  } catch(e){console.warn('KPI credits:',e.message);}
+}
+
+async function filterCredits(el,filter) {
+  creditFilter=filter;
+  document.querySelectorAll('.paiement-tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  showLoading();
+  try { var raw=await api('GET','/credits?statut='+(filter==='tous'?'':filter))||[];
+    CREDITS=raw.map(function(c){return{id:c.id,date:c.date_vente||'',heure:c.heure_vente||'',produit:c.produit_nom,qty:c.quantite,montant:parseInt(c.montant_total),paye:parseInt(c.montant_paye),client:c.client_nom,echeance:c.echeance,note:c.note||'',statut:c.statut};});
+    renderCredits();
+  } catch(e){showError(e.message);} finally{hideLoading();}
+}
+
+function renderCredits() {
+  var today=new Date().toISOString().slice(0,10);
+  var filtered=creditFilter==='tous'?CREDITS:CREDITS.filter(function(c){return c.statut===creditFilter;});
+  var container=document.getElementById('credits-list');
+  if(filtered.length===0){container.innerHTML='<p style="text-align:center;color:var(--text3);padding:28px;font-size:13px">Aucun credit dans cette categorie.</p>';return;}
+  container.innerHTML=filtered.map(function(c){
+    var restant=c.montant-c.paye;
+    var isRetard=c.statut==='en_retard'; var isRegle=c.statut==='regle';
+    var bClass=isRegle?'credit-badge-paid':isRetard?'credit-badge-overdue':'credit-badge-pending';
+    var bLabel=isRegle?'Regle':isRetard?'En retard':'En attente';
+    var rowBg=isRegle?'background:var(--green-light);':isRetard?'background:var(--red-light);':'';
+    var partiel=c.paye>0&&!isRegle?'<span style="font-size:11px;color:var(--amber);font-weight:500"> · Partiel : '+c.paye.toLocaleString('fr-FR')+' F</span>':'';
+    var eColor=isRetard?'color:var(--red)':'color:var(--text3)';
+    return '<div style="'+rowBg+'border-radius:var(--radius);border:1px solid var(--border);margin-bottom:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">'+
+          '<span style="font-size:13px;font-weight:600">'+c.client+'</span>'+
+          '<span class="'+bClass+'">'+bLabel+'</span>'+partiel+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--text2);display:flex;gap:14px;flex-wrap:wrap">'+
+          '<span>'+c.produit+' x'+c.qty+'</span>'+
+          '<span>'+c.date+' '+c.heure+'</span>'+
+          '<span style="'+eColor+'">Echeance : '+c.echeance+'</span>'+
+          (c.note?'<span style="color:var(--text3)">'+c.note+'</span>':'')+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-left:12px;flex-shrink:0">'+
+        '<div style="text-align:right">'+
+          '<div style="font-size:16px;font-weight:700;font-family:monospace;color:'+(isRegle?'var(--green)':isRetard?'var(--red)':'var(--amber)')+'">'+restant.toLocaleString('fr-FR')+' F</div>'+
+          '<div style="font-size:10px;color:var(--text3)">'+(isRegle?'regle':'restant du')+'</div>'+
+        '</div>'+
+        (!isRegle?'<button class="btn btn-primary btn-sm" onclick="ouvrirEncaissement('+c.id+')">Encaisser</button>':'')+
+        '<button class="btn btn-danger btn-sm" onclick="supprimerCredit('+c.id+')">x</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function ouvrirEncaissement(id) {
+  var c=CREDITS.find(function(x){return x.id===id;});
+  if(!c) return;
+  encaissementCreditId=id;
+  var restant=c.montant-c.paye;
+  document.getElementById('encaissement-info').innerHTML=
+    '<strong>'+c.client+'</strong> — '+c.produit+' x'+c.qty+'<br>'+
+    'Total : <strong>'+c.montant.toLocaleString('fr-FR')+' F</strong> · '+
+    'Deja encaisse : <strong>'+c.paye.toLocaleString('fr-FR')+' F</strong> · '+
+    'Restant : <strong style="color:var(--amber)">'+restant.toLocaleString('fr-FR')+' F</strong>';
+  document.getElementById('enc-montant').value=restant;
+  document.getElementById('enc-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('enc-note').value='';
+  document.getElementById('enc-partiel-info').style.display='none';
+  document.getElementById('modal-encaissement').classList.add('show');
+  document.getElementById('enc-montant').oninput=function(){
+    var v=parseFloat(this.value)||0;
+    var pi=document.getElementById('enc-partiel-info');
+    if(v<restant&&v>0){pi.style.display='block';pi.textContent='Paiement partiel : il restera '+(restant-v).toLocaleString('fr-FR')+' F.';}
+    else{pi.style.display='none';}
+  };
+}
+
+async function confirmerEncaissement() {
+  var c=CREDITS.find(function(x){return x.id===encaissementCreditId;});
+  if(!c) return;
+  var mont=parseFloat(document.getElementById('enc-montant').value)||0;
+  if(mont<=0){alert('Montant invalide.');return;}
+  if(mont>(c.montant-c.paye)){alert('Le montant depasse le restant du.');return;}
+  try {
+    await api('POST','/credits/'+c.id+'/encaisser',{montant:mont});
+    await loadCredits(); renderCredits(); updateCreditKPIs(); updateCreditBadge();
+    closeModal('modal-encaissement');
+  } catch(e){showError(e.message);}
+}
+
+async function supprimerCredit(id) {
+  if(!guardAdmin()) return;
+  if(!confirm('Supprimer ce credit client ?')) return;
+  try { await api('DELETE','/credits/'+id); await loadCredits(); renderCredits(); updateCreditKPIs(); updateCreditBadge(); }
+  catch(e){showError(e.message);}
+}
+
+// ===== PRODUCTION =====
+function getPrixVente(produit) {
+  var p=PRODUITS.find(function(x){return x.nom===produit;});
+  return p?p.prix:2000;
+}
+
+async function initProduction() {
+  var today=new Date().toISOString().slice(0,10);
+  document.getElementById('p-date').value=today;
+  var sel=document.getElementById('p-produit');
+  sel.innerHTML=PRODUITS.map(function(p){return '<option value="'+p.nom+'">'+p.nom+'</option>';}).join('');
+  renderProdHistory();
+  await updateProdKPIs();
+}
+
+function updateProdCalc() {
+  var cout=parseFloat(document.getElementById('p-cout').value)||0;
+  var prod=parseInt(document.getElementById('p-produites').value)||0;
+  var vend=parseInt(document.getElementById('p-vendues').value)||0;
+  var produit=document.getElementById('p-produit').value;
+  var prix=getPrixVente(produit);
+  var recettes=vend*prix; var benefice=recettes-cout;
+  var restant=prod-vend; var coutUnit=prod>0?Math.round(cout/prod):0;
+  var margeU=coutUnit>0?(prix-coutUnit):0; var taux=prod>0?Math.round((vend/prod)*100):0;
+  document.getElementById('pr-recettes').textContent=(cout===0&&prod===0)?'—':recettes.toLocaleString('fr-FR')+' F';
+  document.getElementById('pr-recettes-sub').textContent=vend>0?vend+' bts x '+prix.toLocaleString('fr-FR')+' F':'Bouteilles vendues x prix';
+  document.getElementById('pr-cout').textContent=cout>0?cout.toLocaleString('fr-FR')+' F':'—';
+  var benEl=document.getElementById('pr-benefice'); var boxEl=document.getElementById('prod-result-box');
+  if(cout===0&&prod===0){benEl.textContent='—';benEl.className='prod-result-value';boxEl.className='prod-result-box';}
+  else{benEl.textContent=(benefice>=0?'+':'')+benefice.toLocaleString('fr-FR')+' F';benEl.className='prod-result-value '+(benefice>=0?'green':'red');boxEl.className='prod-result-box '+(benefice>=0?'profit':'loss');}
+  var indBox=document.getElementById('prod-indicators');
+  if(cout>0||prod>0){
+    indBox.style.display='flex';
+    document.getElementById('ind-cout-unit').textContent=coutUnit>0?coutUnit.toLocaleString('fr-FR')+' F':'—';
+    var mEl=document.getElementById('ind-marge-unit'); mEl.textContent=margeU!==0?(margeU>=0?'+':'')+margeU.toLocaleString('fr-FR')+' F':'—'; mEl.style.color=margeU>=0?'var(--green)':'var(--red)';
+    document.getElementById('ind-restant').textContent=prod>0?restant+' bts':'—';
+    document.getElementById('ind-taux').textContent=prod>0?taux+'%':'—';
+  } else{indBox.style.display='none';}
+}
+
+async function saveProd() {
+  if(!guardAdmin()) return;
+  var cout=parseFloat(document.getElementById('p-cout').value)||0;
+  var prod=parseInt(document.getElementById('p-produites').value)||0;
+  var vend=parseInt(document.getElementById('p-vendues').value)||0;
+  var produit=document.getElementById('p-produit').value;
+  var date=document.getElementById('p-date').value;
+  if(!cout||!prod){alert('Veuillez renseigner le cout et le nombre de bouteilles produites.');return;}
+  if(vend>prod){alert('Les bouteilles vendues ne peuvent pas depasser les bouteilles produites.');return;}
+  var p=PRODUITS.find(function(x){return x.nom===produit;});
+  try {
+    await api('POST','/productions',{produit_id:p?p.id:null,produit_nom:produit,cout_ingredients:cout,bouteilles_prod:prod,bouteilles_vend:vend,date_prod:date});
+    await loadProductions(); renderProdHistory(); await updateProdKPIs();
+    document.getElementById('prod-toast').style.display='flex';
+    setTimeout(function(){document.getElementById('prod-toast').style.display='none';},3000);
+    resetProdForm();
+  } catch(e){showError(e.message);}
+}
+
+function resetProdForm(){
+  ['p-cout','p-produites','p-vendues'].forEach(function(i){document.getElementById(i).value='';});
+  document.getElementById('prod-result-box').className='prod-result-box';
+  ['pr-recettes','pr-cout','pr-benefice'].forEach(function(i){document.getElementById(i).textContent='—';});
+  document.getElementById('pr-benefice').className='prod-result-value';
+  document.getElementById('prod-indicators').style.display='none';
+}
+
+async function deleteProd(id) {
+  if(!confirm('Supprimer ce lot ?')) return;
+  try { await api('DELETE','/productions/'+id); await loadProductions(); renderProdHistory(); await updateProdKPIs(); }
+  catch(e){showError(e.message);}
+}
+
+function renderProdHistory(){
+  var tbody=document.getElementById('prod-history-body');
+  if(PRODUCTIONS.length===0){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px">Aucun lot enregistre.</td></tr>';return;}
+  tbody.innerHTML=PRODUCTIONS.map(function(p){
+    var restant=p.produites-p.vendues;
+    var taux=p.produites>0?Math.round((p.vendues/p.produites)*100):0;
+    var isProfit=p.benefice>=0;
+    var statut=taux===100?'<span class="prod-tag prod-tag-profit">Tout vendu</span>':taux>=70?'<span class="prod-tag prod-tag-profit">En cours</span>':taux>=30?'<span class="prod-tag prod-tag-neutral">Partiel</span>':'<span class="prod-tag prod-tag-loss">Faible vente</span>';
+    return '<tr>'+
+      '<td style="color:var(--text3);font-family:monospace;font-size:12px">'+p.date+'</td>'+
+      '<td style="font-weight:500">'+p.produit+'</td>'+
+      '<td style="font-family:monospace">'+p.cout.toLocaleString('fr-FR')+' F</td>'+
+      '<td style="font-family:monospace;text-align:center">'+p.produites+'</td>'+
+      '<td style="font-family:monospace;text-align:center">'+p.vendues+'</td>'+
+      '<td style="font-family:monospace;text-align:center;color:'+(restant>0?'var(--amber)':'var(--green)')+'">'+restant+'</td>'+
+      '<td style="font-family:monospace">'+p.recettes.toLocaleString('fr-FR')+' F</td>'+
+      '<td><span class="badge '+(isProfit?'badge-green':'badge-red')+'">'+(isProfit?'+':'')+p.benefice.toLocaleString('fr-FR')+' F</span></td>'+
+      '<td>'+statut+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function updateProdKPIs(){
+  try {
+    var data=await api('GET','/productions/kpi');
+    var totalProd=parseInt(data.total_prod); var totalVend=parseInt(data.total_vend);
+    var taux=totalProd>0?Math.round((totalVend/totalProd)*100):0;
+    document.getElementById('kpi-lots').textContent=data.total_lots;
+    document.getElementById('kpi-prod').textContent=totalProd;
+    document.getElementById('kpi-vend').textContent=totalVend;
+    var ben=parseInt(data.total_benefice);
+    document.getElementById('kpi-ben').textContent=(ben>=0?'':'-')+Math.abs(ben).toLocaleString('fr-FR')+' F';
+    document.getElementById('kpi-ben').style.color=ben>=0?'var(--green)':'var(--red)';
+  } catch(e){console.warn('KPI prod:',e.message);}
+}
+
+function exportProdCSV(){
+  var rows=[['Date','Produit','Cout ingredients (F)','Bouteilles produites','Bouteilles vendues','Restant','Recettes (F)','Benefice (F)']];
+  PRODUCTIONS.forEach(function(p){rows.push([p.date,p.produit,p.cout,p.produites,p.vendues,p.produites-p.vendues,p.recettes,p.benefice]);});
+  var csv=rows.map(function(r){return r.join(',');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob); var a=document.createElement('a');
+  a.href=url; a.download='JusNatPro_production_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ===== HISTORIQUE =====
+async function setPeriod(el, p) {
+  document.querySelectorAll('.period-tab').forEach(function(t){t.classList.remove('active');});
+  if(el) el.classList.add('active');
+  showLoading();
+  try {
+    var ventes=await api('GET','/ventes?periode='+p)||[];
+    var ca=0,ben=0,qte=0;
+    ventes.forEach(function(v){ca+=parseInt(v.montant_total);ben+=parseInt(v.benefice);qte+=parseInt(v.quantite);});
+    document.getElementById('h-ca').textContent =ca.toLocaleString('fr-FR')+' F';
+    document.getElementById('h-ben').textContent=ben.toLocaleString('fr-FR')+' F';
+    document.getElementById('h-qte').textContent=qte;
+    var tbody=document.getElementById('histo-journal-body');
+    if(ventes.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Aucune vente pour cette periode.</td></tr>';}
+    else{
+      tbody.innerHTML=ventes.map(function(v){
+        var date=v.created_at?new Date(v.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+        return '<tr>'+
+          '<td style="color:var(--text3);font-family:monospace;font-size:12px">'+date+'</td>'+
+          '<td>'+v.produit_nom+'</td><td>'+v.quantite+'</td>'+
+          '<td>'+parseInt(v.montant_total).toLocaleString('fr-FR')+' F</td>'+
+          '<td>'+parseInt(v.cout_production).toLocaleString('fr-FR')+' F</td>'+
+          '<td><span class="badge badge-green">+'+parseInt(v.benefice).toLocaleString('fr-FR')+' F</span></td>'+
+        '</tr>';
+      }).join('');
+    }
+  } catch(e){showError(e.message);} finally{hideLoading();}
+}
+
+// ===== EXPORT CSV (via API) =====
+async function exportCSV(type) {
+  if(!guardAdmin()) return;
+  var path = type==='stock' ? '/rapports/stock' : '/rapports/ventes?periode='+type;
+  var res  = await fetch(API_URL+'/api'+path, {headers:{'Authorization':'Bearer '+authToken}});
+  if(!res.ok){showError('Erreur export');return;}
+  var blob = await res.blob();
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href=url; a.download='JusNatPro_'+type+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function dbReset(){
+  if(!guardAdmin()) return;
+  alert('La reinitialisation des donnees doit etre faite directement dans la base de donnees par un administrateur technique.');
+}
+
+// ===== GRAPHIQUES =====
+function initCharts() {
+  if(chartsInitialized) return;
+  chartsInitialized=true;
+  Chart.defaults.font.family="'DM Sans', sans-serif";
+  new Chart(document.getElementById('salesChart'),{type:'bar',
+    data:{labels:['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],
+      datasets:[{label:'Unites',data:[0,0,0,0,0,0,0],backgroundColor:'#1D9E75',borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12},color:'#9a9a94'}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},color:'#9a9a94'}}}}});
+  var colors=PRODUITS.map(function(p){return p.couleur;});
+  var labels=PRODUITS.map(function(p){return p.nom;});
+  new Chart(document.getElementById('pieChart'),{type:'doughnut',
+    data:{labels:labels.length?labels:['Aucun produit'],
+      datasets:[{data:labels.length?PRODUITS.map(function(){return 1;}):[1],backgroundColor:colors.length?colors:['#cccccc'],borderWidth:2,borderColor:'#FFFFFF'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+}
+
+function initHistoChart() {
+  if(histoInit) return; histoInit=true;
+  Chart.defaults.font.family="'DM Sans', sans-serif";
+  new Chart(document.getElementById('histoChart'),{type:'line',
+    data:{labels:['Sem. 1','Sem. 2','Sem. 3','Sem. 4'],
+      datasets:[{label:'Benefice (F CFA)',data:[0,0,0,0],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,.08)',tension:.4,fill:true,pointBackgroundColor:'#1D9E75',pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12},color:'#9a9a94'}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},color:'#9a9a94',callback:function(v){return v.toLocaleString('fr-FR')+' F';}}}}}});
+}
+
+// ===== DATE =====
+function setDate() {
+  var d=new Date();
+  document.getElementById('current-date').textContent=d.toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+// ===== NAVIGATION MOBILE =====
+function mobileNav(screen) {
+  closeMobileDrawer();
+  if(currentUser&&currentUser.role!=='admin'&&ADMIN_ONLY_SCREENS.indexOf(screen)!==-1){showGuardToast('Section reservee a l\'administrateur');return;}
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('screen-'+screen).classList.add('active');
+  document.getElementById('page-title').textContent=SCREEN_TITLES[screen]||screen;
+  document.querySelectorAll('.bnav-item').forEach(function(b){b.classList.remove('active');});
+  var ab=document.querySelector('.bnav-item[data-screen="'+screen+'"]');
+  if(ab) ab.classList.add('active');
+  var content=document.querySelector('.content'); if(content) content.scrollTop=0;
+  loadScreen(screen);
+}
+function openMobileDrawer(){document.getElementById('mobile-drawer').classList.add('open');}
+function closeMobileDrawer(){var d=document.getElementById('mobile-drawer');if(d)d.classList.remove('open');}
+
+// ===== INIT =====
+setDate();
+
+// Vérifier si un token est déjà stocké → connexion automatique
+(async function(){
+  if(authToken){
+    try {
+      var me=await api('GET','/health');
+      if(me){
+        // Vérifier le token en faisant un appel authenticated
+        var data=await api('GET','/produits');
+        if(data){
+          // Token encore valide — mais on a besoin des infos utilisateur
+          // On redemande la connexion pour simplifier
+        }
+      }
+    } catch(e){ authToken=null; localStorage.removeItem('jusnat_token'); }
+  }
+})();
+</script>
+</script>
+
+<!-- ===== BOTTOM NAVIGATION MOBILE ===== -->
+<nav id="bottom-nav">
+  <button class="bnav-item active" data-screen="dashboard" onclick="mobileNav('dashboard')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span class="bnav-label">Accueil</span>
+  </button>
+  <button class="bnav-item" data-screen="ventes" onclick="mobileNav('ventes')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    <span class="bnav-label">Vente</span>
+  </button>
+  <button class="bnav-item" data-screen="paiements" onclick="mobileNav('paiements')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+    <span class="bnav-label">Credits</span>
+    <span class="bnav-badge amber" id="bnav-credit-badge" style="display:none">0</span>
+  </button>
+  <button class="bnav-item" data-screen="historique" onclick="mobileNav('historique')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span class="bnav-label">Historique</span>
+  </button>
+  <button class="bnav-item" onclick="openMobileDrawer()">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <span class="bnav-label">Menu</span>
+    <span class="bnav-badge" id="bnav-stock-badge" style="display:none">0</span>
+  </button>
+</nav>
+
+<!-- ===== DRAWER MOBILE (menu secondaire) ===== -->
+<div id="mobile-drawer">
+  <div id="drawer-overlay" onclick="closeMobileDrawer()"></div>
+  <div id="drawer-panel">
+    <div id="drawer-handle"></div>
+    <div class="drawer-title">Gestion</div>
+    <div class="drawer-item" onclick="mobileNav('produits')">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Produits
+      <svg width="14" height="14" style="margin-left:4px;color:var(--amber)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="drawer-item" onclick="mobileNav('stock')">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Stocks
+      <span class="drawer-badge" id="drawer-stock-badge" style="display:none">0</span>
+    </div>
+    <div class="drawer-item" onclick="mobileNav('production')">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M2 20h20M6 20V10l6-6 6 6v10M10 20v-5h4v5"/></svg>
+      Production
+      <svg width="14" height="14" style="margin-left:4px;color:var(--amber)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="drawer-title" style="margin-top:8px">Analyse</div>
+    <div class="drawer-item" onclick="mobileNav('rapports')">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Rapports
+      <svg width="14" height="14" style="margin-left:4px;color:var(--amber)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="drawer-title" style="margin-top:8px">Compte</div>
+    <div class="drawer-item" onclick="logout();closeMobileDrawer();" style="color:var(--red)">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Se deconnecter
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
 
